@@ -162,6 +162,10 @@ jobs:
 
 The action fetches the triggering issue from the GitHub API, normalizes it into the linter's ticket shape, runs the lint, posts the result as a comment, and writes outputs (`ready`, `failed-count`, `warnings-count`). When `fail-on-not-ready: true`, the step exits non-zero so the issue check shows red until the ticket is fixed.
 
+**What the comment looks like on a passing issue:**
+
+![agent-ready Action comment on a GitHub issue](docs/comment-screenshot.png)
+
 When `set-label: true` (the default), the action adds the `agent-ready` label to the issue when it passes and removes it when it fails. The label is created automatically in the repo if it doesn't exist. This lets downstream agent workflows trigger on the label — for example, kicking off a Copilot or Claude Code run only when `agent-ready` appears.
 
 ### Triggering a coding agent only when ready
