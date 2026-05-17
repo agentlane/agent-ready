@@ -54,7 +54,7 @@ It's the **front door** of the agentic SDLC: prove the ticket is ready before an
 | No repo target → wrong codebase modified | `repo:` field enforced as a blocker |
 | Subjective PR review ("this doesn't match the ticket") | Objective AC checklist baked into the ticket |
 
-## What it checks (v0 default rule pack — 10 rules)
+## What it checks (10 built-in rules)
 
 | Rule | What it looks for |
 |---|---|
@@ -73,7 +73,7 @@ Plus user-defined custom rules of `type: regex` (see [Rule pack format](#rule-pa
 
 Every rule can be enabled, disabled, or tuned in a YAML rule pack.
 
-> **Planned for v0.1 (not yet implemented):** `links-resolve`, `restricted-paths-declared`, plus `path_recommendation` / `context_tier` / `risk_classification` output fields, Jira/Linear adapters, SARIF output, an `agent-ready` label setter, and a Node plugin loader for custom rules.
+> **Coming next:** see the [open issues](https://github.com/Schoaib/agent-ready/issues) for planned rules and features.
 
 ## Install
 
@@ -89,7 +89,7 @@ npm i -g @syedshoaib/agent-ready
 agent-ready check ./ticket.json
 ```
 
-> The CLI supports local JSON tickets and GitHub Issues. GitHub auth uses `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token`. Native Jira/Linear CLI adapters are planned for v0.1.
+> The CLI supports local JSON tickets and GitHub Issues. GitHub auth uses `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token`. Native Jira/Linear CLI adapters are planned.
 
 ## Usage
 
@@ -141,7 +141,7 @@ jobs:
 
 The action fetches the triggering issue from the GitHub API, normalizes it into the linter's ticket shape, runs the lint, posts the result as a comment, and writes outputs (`ready`, `failed-count`, `warnings-count`). When `fail-on-not-ready: true`, the step exits non-zero so the issue check shows red until the ticket is fixed.
 
-> **Planned for v0.1:** the action will also set/remove an `agent-ready` label on the issue so downstream agent workflows can listen for the label rather than parsing comment text.
+> **Coming next:** [issue #3](https://github.com/Schoaib/agent-ready/issues/3) tracks adding an automatic `agent-ready` label so downstream workflows can trigger on the label rather than parsing comments.
 
 ## Rule pack format
 
@@ -188,7 +188,7 @@ JSON Schemas are published in [`schema/`](schema/) — both the rule pack format
 
 ## Status
 
-**v0.0.3.** Schemas, CLI, file and GitHub adapters, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
+**Current release: 0.0.3.** Schemas, CLI, file and GitHub adapters, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
 
 ## Releases
 
@@ -196,33 +196,24 @@ GitHub Action users should pin either:
 
 ```yaml
 - uses: Schoaib/agent-ready@v0.0.3  # exact release
-- uses: Schoaib/agent-ready@v0      # latest v0 release
+- uses: Schoaib/agent-ready@v0      # floating major tag — always latest stable
 ```
-
-The Marketplace listing is published from GitHub Releases. For each release, verify CI, create the version tag, publish the release, and select **Publish this Action to the GitHub Marketplace**.
 
 ### Roadmap
 
-**v0.1 — honest the rest of the way**
-- Native CLI adapters for Jira and Linear
-- `links-resolve` rule
-- `restricted-paths-declared` rule (links to OPA's `restricted-paths.rego`)
-- `path_recommendation` (A/B/C), `context_tier` (T1/T2/T3), and `risk_classification` as first-class output fields — driven by a rule pack
-- `agent-ready` label setter on the issue (so agent workflows can listen for the label)
-- SARIF output format
-- Output fields for Gatepack ingestion: rule pack version + hash, source URL, adapter metadata
-- LLM judge for `no-ambiguous-verbs` (opt-in)
+Track all planned work in [GitHub Issues](https://github.com/Schoaib/agent-ready/issues). Highlights:
 
-**v0.2**
-- VS Code extension: lint as you type the issue
+- Native CLI adapters for Jira and Linear ([#1](https://github.com/Schoaib/agent-ready/issues/1))
+- `links-resolve` and `restricted-paths-declared` rules ([#2](https://github.com/Schoaib/agent-ready/issues/2))
+- Automatic `agent-ready` label setter on issues ([#3](https://github.com/Schoaib/agent-ready/issues/3))
+- SARIF output format ([#7](https://github.com/Schoaib/agent-ready/issues/7))
+- LLM judge for `no-ambiguous-verbs` — opt-in ([#17](https://github.com/Schoaib/agent-ready/issues/17))
+- VS Code extension: lint as you type
 - Node plugin loader for custom rules (beyond regex)
-
-**v0.3**
-- Companion product `gatepack` — signed per-PR evidence bundle that includes the `agent-ready` pre-flight result as one of its input sources
 
 ## Contributing
 
-Rules are the easiest contribution path. One rule = one entry in `src/rules/built-in.ts` + one demonstration in `examples/tickets/`. PRs welcome.
+Rules are the easiest contribution path — one rule = one entry in `src/rules/built-in.ts` + one fixture in `examples/tickets/`. Browse [good first issues](https://github.com/Schoaib/agent-ready/issues?q=is%3Aopen+label%3A%22good+first+issue%22) to get started. PRs welcome.
 
 ## License
 
