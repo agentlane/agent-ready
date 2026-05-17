@@ -9,23 +9,24 @@ If the answer is no, it tells you exactly what's missing — in seconds, in CI, 
 ```bash
 $ npx agent-ready check examples/tickets/bad-ticket.json
 
-✗ PROJ-1234  not ready  (3 issues)
+✗ PROJ-1234  not ready  (4 blocker(s), 6 warning(s))
 
-  ✗ missing-acceptance-criteria   No acceptance criteria found
-  ✗ no-repo-target                Ticket does not specify the target repo
-  ⚠ ambiguous-verb                "improve" is ambiguous — prefer "add", "fix", "remove"
-
-  Fix the issues above, then re-run. Until this ticket passes, do not hand it to an agent.
+  ✗ has-acceptance-criteria       No acceptance criteria found (need at least 1)
+  ⚠ has-definition-of-done        No Definition of Done found
+  ✗ has-repo-target               Ticket does not specify the target repo
+  ✗ has-risk-classification       No risk classification label
+  ⚠ has-test-expectations         No test expectations described
+  ⚠ no-ambiguous-verbs            Ambiguous verb(s): improve, make it better
+  ✗ body-min-length               Body too short: 91 chars (need >= 100)
+  ⚠ no-tribal-knowledge           Tribal-knowledge phrase(s): you know what i mean
+  ⚠ t-shirt-size-present          No t-shirt size estimate
+  ⚠ has-design-link               UI ticket has no design link
 ```
 
 ```bash
 $ npx agent-ready check examples/tickets/good-ticket.json
 
-✓ PROJ-2042  ready  (12 checks passed)
-
-  Agent path recommendation:  B  (multi-agent, complex domain)
-  Risk classification:        medium
-  Estimated context tier:     T2  (frontend → DLS catalog)
+✓ PROJ-2042  ready  (10 checks passed)
 ```
 
 ## Why this exists
@@ -40,59 +41,57 @@ Agents are confident and fast. Without a clear ticket, that's a liability — th
 
 It's the **front door** of the agentic SDLC: prove the ticket is ready before any agent touches it.
 
-## What it checks (default rule pack)
+## What it checks (v0 default rule pack — 10 rules)
 
 | Rule | What it looks for |
 |---|---|
-| `has-acceptance-criteria` | At least N acceptance criteria (numbered list, checklist, or Gherkin) |
-| `has-definition-of-done` | A DoD section or linked DoD |
-| `has-repo-target` | `repo:` field or label specifies which repo this ticket modifies |
-| `has-risk-classification` | A risk label (`risk:low`, `risk:medium`, `risk:high`) |
-| `has-design-link` | Figma/Ardoq link present if the ticket has a `ui` label |
-| `has-test-expectations` | Test plan or "How to verify" section |
-| `no-ambiguous-verbs` | Flags vague verbs (`improve`, `optimize`, `clean up`, `refactor`) without specifics |
-| `body-min-length` | Body is at least 100 characters |
+| `has-acceptance-criteria` | At least N acceptance criteria (numbered list, checklist, or Given/When) |
+| `has-definition-of-done` | A DoD section in the body |
+| `has-repo-target` | `repo:` in the body or a `repo:<name>` label |
+| `has-risk-classification` | A `risk:low`/`risk:medium`/`risk:high` label |
+| `has-design-link` | Figma/Ardoq/Miro/Excalidraw link present when the ticket has a `ui`/`ux`/`frontend` label |
+| `has-test-expectations` | "How to verify" / test plan / Playwright / Jest / Pytest mentioned |
+| `no-ambiguous-verbs` | Flags vague verbs (`improve`, `optimize`, `clean up`, `refactor`, `enhance`, …) |
+| `body-min-length` | Body is at least 100 characters (configurable) |
 | `no-tribal-knowledge` | Flags phrases like "as discussed", "you know what I mean", "the usual way" |
-| `links-resolve` | All linked URLs return 2xx |
-| `restricted-paths-declared` | If the ticket might touch auth/payments/secrets, the risk class must be `high` |
-| `t-shirt-size-present` | A complexity hint (`size:S`, `size:M`, `size:L`) |
+| `t-shirt-size-present` | `size:` in the body or a `size:S|M|L|XL` label |
 
-Every rule can be enabled, disabled, or tuned in a YAML rule pack. Custom rules ship as plugins.
+Plus user-defined custom rules of `type: regex` (see [Rule pack format](#rule-pack-format)).
+
+Every rule can be enabled, disabled, or tuned in a YAML rule pack.
+
+> **Planned for v0.1 (not yet implemented):** `links-resolve`, `restricted-paths-declared`, plus `path_recommendation` / `context_tier` / `risk_classification` output fields, GitHub/Jira/Linear adapters, SARIF output, an `agent-ready` label setter, and a Node plugin loader for custom rules.
 
 ## Install
 
 ```bash
 # One-off use
-npx agent-ready check <ticket-id-or-file>
+npx agent-ready check <path-to-ticket-json>
 
 # Or install globally
 npm i -g agent-ready
-agent-ready check PROJ-1234
+agent-ready check ./ticket.json
 ```
 
-## Usage
+> v0 supports reading tickets from a local JSON file only. The GitHub Action below normalizes a real GitHub Issue into that shape via `jq` so the workflow works end-to-end today. Native GitHub/Jira/Linear CLI adapters are planned for v0.1.
+
+## Usage (v0)
 
 ```bash
-# From a local JSON file (great for testing rule packs)
-agent-ready check ./ticket.json
-
-# From GitHub Issues
-agent-ready check owner/repo#123 --adapter github
-
-# From Jira
-agent-ready check PROJ-1234 --adapter jira
-
-# From Linear
-agent-ready check ENG-456 --adapter linear
+# Lint a ticket from a local JSON file
+agent-ready check examples/tickets/bad-ticket.json
+agent-ready check examples/tickets/good-ticket.json
 
 # Use a custom rule pack
-agent-ready check PROJ-1234 --rules ./my-rules.yaml
+agent-ready check ./ticket.json --rules ./my-rules.yaml
 
 # Output formats
-agent-ready check PROJ-1234 --format markdown   # PR comment
-agent-ready check PROJ-1234 --format sarif      # Code scanning
-agent-ready check PROJ-1234 --format json       # Machine-readable
+agent-ready check ./ticket.json --format text       # default
+agent-ready check ./ticket.json --format markdown   # PR comment
+agent-ready check ./ticket.json --format json       # machine-readable
 ```
+
+Exit codes: `0` ready · `1` not ready · `2` usage error.
 
 ## GitHub Action
 
@@ -103,25 +102,27 @@ name: Agent-Ready Check
 on:
   issues:
     types: [opened, edited, labeled]
-  issue_comment:
-    types: [created]
 
 jobs:
   check:
     runs-on: ubuntu-latest
     permissions: { issues: write }
     steps:
-      - uses: agent-ready/action@v0
+      - uses: actions/checkout@v4
+      - uses: your-org/agent-ready@v0
         with:
           rules: .agent-ready/rules.yaml   # optional
           comment-on-issue: true
+          fail-on-not-ready: true
 ```
 
-The action runs on every issue open/edit, comments the result back on the issue, and sets a status. When the issue is ready, label it `agent-ready` and your agent workflow can pick it up with confidence.
+The action fetches the triggering issue from the GitHub API, normalizes it into the linter's ticket shape, runs the lint, posts the result as a comment, and writes outputs (`ready`, `failed-count`, `warnings-count`). When `fail-on-not-ready: true`, the step exits non-zero so the issue check shows red until the ticket is fixed.
+
+> **Planned for v0.1:** the action will also set/remove an `agent-ready` label on the issue so downstream agent workflows can listen for the label rather than parsing comment text.
 
 ## Rule pack format
 
-Rule packs are plain YAML. Mix built-ins with custom rules:
+Rule packs are plain YAML. Mix built-ins with custom rules of `type: regex`:
 
 ```yaml
 # .agent-ready/rules.yaml
@@ -147,6 +148,8 @@ rules:
     message: "Ticket must link to a parent epic (EPIC-XXX)"
 ```
 
+JSON Schemas are published in [`schema/`](schema/) — both the rule pack format ([`rule-pack.schema.json`](schema/rule-pack.schema.json)) and the CLI output ([`output.schema.json`](schema/output.schema.json)). The output schema is stable across versions; downstream tools (e.g. [Gatepack](#how-it-composes-with-the-rest-of-your-stack)) can safely consume it.
+
 ## How it composes with the rest of your stack
 
 `agent-ready` is the **first** gate. It doesn't replace your existing tools — it makes them work better.
@@ -156,22 +159,36 @@ rules:
 | **`agent-ready`** | Is this *ticket* ready for an agent? | Issue open → before agent picks up |
 | Spec Kit / Linear specs | Authoring help for the spec itself | While writing the ticket |
 | Your AI coding agent | Implements the change | After `agent-ready` passes |
-| Gatepack *(coming soon)* | Per-PR signed evidence bundle | After agent submits PR |
+| Gatepack *(planned)* | Per-PR signed evidence bundle (includes `agent-ready` pre-flight result) | After agent submits PR |
 | Evidence Gate Action | Traditional CI evidence (SBOM, SAST, tests) | During CI |
 | OPA / your policy engine | Decision enforcement | Throughout |
 
 ## Status
 
-`v0` — schemas, CLI scaffold, GitHub Action wrapper, and example tickets all work. Built-in rules are minimal; the surface area to contribute new rules is intentionally small.
+**v0.0.1.** Schemas, CLI, file adapter, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
 
-**Roadmap:**
-- v0.1: Jira + Linear adapters, LLM judge for `no-ambiguous-verbs`
-- v0.2: VS Code extension (lint as you type the issue)
-- v0.3: Companion product `gatepack` — signed per-PR evidence bundle that includes the `agent-ready` pre-flight result
+### Roadmap
+
+**v0.1 — honest the rest of the way**
+- Native CLI adapters for GitHub, Jira, Linear (today the GitHub Action does the normalization)
+- `links-resolve` rule
+- `restricted-paths-declared` rule (links to OPA's `restricted-paths.rego`)
+- `path_recommendation` (A/B/C), `context_tier` (T1/T2/T3), and `risk_classification` as first-class output fields — driven by a rule pack
+- `agent-ready` label setter on the issue (so agent workflows can listen for the label)
+- SARIF output format
+- Output fields for Gatepack ingestion: rule pack version + hash, source URL, adapter metadata
+- LLM judge for `no-ambiguous-verbs` (opt-in)
+
+**v0.2**
+- VS Code extension: lint as you type the issue
+- Node plugin loader for custom rules (beyond regex)
+
+**v0.3**
+- Companion product `gatepack` — signed per-PR evidence bundle that includes the `agent-ready` pre-flight result as one of its input sources
 
 ## Contributing
 
-Rules are the easiest contribution path. One rule = one TypeScript file in `src/rules/built-in/` + one test fixture in `examples/tickets/`. PRs welcome.
+Rules are the easiest contribution path. One rule = one entry in `src/rules/built-in.ts` + one demonstration in `examples/tickets/`. PRs welcome.
 
 ## License
 
