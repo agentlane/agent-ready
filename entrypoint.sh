@@ -1,11 +1,30 @@
 #!/bin/sh
 set -e
 
-# Inputs are passed by GitHub Actions as INPUT_<NAME-UPPERCASED>
-ISSUE_NUMBER="${INPUT_ISSUE_NUMBER:-${GITHUB_EVENT_PATH:+$(jq -r '.issue.number // empty' "$GITHUB_EVENT_PATH")}}"
-RULES="${INPUT_RULES:-}"
-COMMENT="${INPUT_COMMENT_ON_ISSUE:-true}"
-FAIL="${INPUT_FAIL_ON_NOT_READY:-true}"
+input_value() {
+  # Docker actions may expose hyphenated input names literally
+  # (for example INPUT_COMMENT-ON-ISSUE), so read via printenv.
+  printenv "INPUT_$1" 2>/dev/null || true
+}
+
+ISSUE_NUMBER="$(input_value ISSUE_NUMBER)"
+if [ -z "$ISSUE_NUMBER" ]; then ISSUE_NUMBER="$(input_value ISSUE-NUMBER)"; fi
+if [ -z "$ISSUE_NUMBER" ] && [ -n "${GITHUB_EVENT_PATH:-}" ]; then
+  ISSUE_NUMBER="$(jq -r '.issue.number // empty' "$GITHUB_EVENT_PATH")"
+fi
+
+RULES="$(input_value RULES)"
+COMMENT="$(input_value COMMENT_ON_ISSUE)"
+if [ -z "$COMMENT" ]; then COMMENT="$(input_value COMMENT-ON-ISSUE)"; fi
+COMMENT="${COMMENT:-true}"
+
+FAIL="$(input_value FAIL_ON_NOT_READY)"
+if [ -z "$FAIL" ]; then FAIL="$(input_value FAIL-ON-NOT-READY)"; fi
+FAIL="${FAIL:-true}"
+
+TOKEN="$(input_value GITHUB_TOKEN)"
+if [ -z "$TOKEN" ]; then TOKEN="$(input_value GITHUB-TOKEN)"; fi
+TOKEN="${TOKEN:-${GITHUB_TOKEN:-}}"
 
 if [ -z "$ISSUE_NUMBER" ]; then
   echo "agent-ready: no issue number provided and no triggering issue found"
@@ -16,7 +35,11 @@ REPO="${GITHUB_REPOSITORY:?}"
 API="https://api.github.com/repos/${REPO}/issues/${ISSUE_NUMBER}"
 
 # Fetch issue
-ISSUE_JSON=$(curl -sSL -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" "$API")
+if [ -n "$TOKEN" ]; then
+  ISSUE_JSON=$(curl -sSL -H "Authorization: token ${TOKEN}" -H "Accept: application/vnd.github+json" "$API")
+else
+  ISSUE_JSON=$(curl -sSL -H "Accept: application/vnd.github+json" "$API")
+fi
 
 # Normalize into agent-ready Ticket shape
 TICKET_FILE=$(mktemp)
@@ -37,22 +60,30 @@ FAILED=$(echo "$JSON_OUT" | jq -r '.summary.failed')
 WARNINGS=$(echo "$JSON_OUT" | jq -r '.summary.warnings')
 
 # Emit outputs
-{
-  echo "ready=$READY"
-  echo "failed-count=$FAILED"
-  echo "warnings-count=$WARNINGS"
-} >> "$GITHUB_OUTPUT"
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  {
+    echo "ready=$READY"
+    echo "failed-count=$FAILED"
+    echo "warnings-count=$WARNINGS"
+  } >> "$GITHUB_OUTPUT"
+fi
 
 # Step summary
-{
-  echo "$MD_OUT"
-} >> "$GITHUB_STEP_SUMMARY"
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+  {
+    echo "$MD_OUT"
+  } >> "$GITHUB_STEP_SUMMARY"
+fi
 
 # Comment on issue
 if [ "$COMMENT" = "true" ]; then
-  COMMENT_BODY=$(jq -Rs '.' <<< "$MD_OUT")
+  if [ -z "$TOKEN" ]; then
+    echo "agent-ready: cannot comment without github-token or GITHUB_TOKEN"
+    exit 2
+  fi
+  COMMENT_BODY=$(printf "%s" "$MD_OUT" | jq -Rs '.')
   curl -sSL -X POST \
-    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Authorization: token ${TOKEN}" \
     -H "Accept: application/vnd.github+json" \
     "https://api.github.com/repos/${REPO}/issues/${ISSUE_NUMBER}/comments" \
     -d "{\"body\": $COMMENT_BODY}" > /dev/null

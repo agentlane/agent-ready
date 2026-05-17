@@ -21,6 +21,9 @@ inputs:
     description: "Exit non-zero when the issue is not ready. Use with required-status-checks."
     required: false
     default: "true"
+  github-token:
+    description: "Token used to fetch and comment on GitHub Issues. Pass `${{ github.token }}` from workflows."
+    required: false
 
 outputs:
   ready:
