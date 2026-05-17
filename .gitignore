@@ -4,6 +4,17 @@ dist/
 *.log
 .env
 .env.local
+.openclaw/
+.claude/
 .idea/
 .vscode/
 coverage/
+
+# Public launch docs are okay to commit; keep private launch ops out.
+launch/private/
+launch/secrets.*
+launch/.env
+launch/community-targets.yml
+launch/outreach-tracker.md
+launch/daily-recaps/
+launch/metrics/raw/
