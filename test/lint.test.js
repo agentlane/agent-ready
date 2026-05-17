@@ -97,6 +97,12 @@ describe("lintTicket — bad ticket", () => {
     assert.equal(ambig.status, "fail");
   });
 
+  it("does not run opt-in LLM judge unless enabled", async () => {
+    const out = await lintTicket(badTicket, emptyPack, opts);
+    const judge = out.checks.find((c) => c.id === "llm-judge-ambiguity");
+    assert.equal(judge, undefined);
+  });
+
   it("flags has-risk-classification (no label)", async () => {
     const out = await lintTicket(badTicket, emptyPack, opts);
     const risk = out.checks.find((c) => c.id === "has-risk-classification");
