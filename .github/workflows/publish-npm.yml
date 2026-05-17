@@ -1,11 +1,20 @@
 name: Publish npm
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - package-lock.json
+      - .github/workflows/publish-npm.yml
 
 permissions:
   contents: read
   id-token: write
+
+concurrency:
+  group: publish-npm
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -14,13 +23,38 @@ jobs:
     environment: npm
     steps:
       - uses: actions/checkout@v6
+
       - uses: actions/setup-node@v6
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
+
+      - id: package
+        name: Read package metadata
+        run: |
+          echo "name=$(node -p "require('./package.json').name")" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - id: published
+        name: Check npm version
+        run: |
+          if npm view "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }}" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }} is already published; skipping."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - run: npm ci
+        if: steps.published.outputs.exists == 'false'
+
       - run: npm run build
+        if: steps.published.outputs.exists == 'false'
+
       - run: npm pack --dry-run
+        if: steps.published.outputs.exists == 'false'
+
       - run: npm publish --access public --provenance
+        if: steps.published.outputs.exists == 'false'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
