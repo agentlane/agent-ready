@@ -1,4 +1,4 @@
-name: Agent Ready
+name: Agent Ready Gate
 description: Lint GitHub Issues for AI-agent readiness before Copilot, Cursor, Claude Code, or Codex starts work.
 author: Shoaib
 branding:
