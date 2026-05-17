@@ -113,11 +113,14 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    permissions: { issues: write }
+    permissions:
+      contents: read
+      issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: Schoaib/agent-ready@v0
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           rules: .agent-ready/rules.yaml   # optional
           comment-on-issue: true
           fail-on-not-ready: true
@@ -173,6 +176,17 @@ JSON Schemas are published in [`schema/`](schema/) — both the rule pack format
 ## Status
 
 **v0.0.1.** Schemas, CLI, file and GitHub adapters, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
+
+## Releases
+
+GitHub Action users should pin either:
+
+```yaml
+- uses: Schoaib/agent-ready@v0.0.1  # exact release
+- uses: Schoaib/agent-ready@v0      # latest v0 release
+```
+
+The Marketplace listing is published from GitHub Releases. For each release, verify CI, create the version tag, publish the release, and select **Publish this Action to the GitHub Marketplace**.
 
 ### Roadmap
 

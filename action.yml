@@ -1,6 +1,6 @@
-name: agent-ready
-description: Make every ticket ready for AI coding agents. Runs the agent-ready linter against a GitHub Issue.
-author: agent-ready contributors
+name: Agent Ready
+description: Lint GitHub Issues for AI-agent readiness before Copilot, Cursor, Claude Code, or Codex starts work.
+author: Shoaib
 branding:
   icon: check-circle
   color: green
