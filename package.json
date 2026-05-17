@@ -1,6 +1,6 @@
 {
   "name": "@agentlane/agent-ready",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Make every ticket ready for AI coding agents — a Definition-of-Ready linter.",
   "type": "module",
   "bin": {
