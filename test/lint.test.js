@@ -71,9 +71,14 @@ describe("lintTicket — bad ticket", () => {
 
   it("contains the expected schema fields", async () => {
     const out = await lintTicket(badTicket, emptyPack, opts);
-    assert.equal(out.schema_version, "1.0");
+    assert.equal(out.schema_version, "1.1");
     assert.equal(out.ticket_id, "PROJ-1234");
     assert.equal(out.adapter, "file");
+    assert.equal(out.rule_pack_version, "1");
+    assert.deepEqual(out.source, { adapter: "file" });
+    assert.equal(out.signals.path_recommendation, "C");
+    assert.equal(out.path_recommendation, out.signals.path_recommendation);
+    assert.equal(out.context_tier, out.signals.context_tier);
     assert.ok(typeof out.checked_at === "string");
     assert.ok(Array.isArray(out.checks));
   });
@@ -113,7 +118,7 @@ describe("lintTicket — good ticket", () => {
     assert.equal(out.summary.failed, 0);
   });
 
-  it("passes all 10 built-in rules (or skips non-applicable)", async () => {
+  it("passes all built-in rules (or skips non-applicable)", async () => {
     const out = await lintTicket(goodTicket, offlinePack, opts);
     for (const c of out.checks) {
       assert.ok(
@@ -121,6 +126,13 @@ describe("lintTicket — good ticket", () => {
         `Expected pass/skip for ${c.id}, got ${c.status}: ${c.message}`
       );
     }
+  });
+
+  it("derives high-risk UI signals deterministically", async () => {
+    const out = await lintTicket(goodTicket, offlinePack, opts);
+    assert.equal(out.signals.risk_classification, "high");
+    assert.equal(out.signals.path_recommendation, "C");
+    assert.equal(out.signals.context_tier, "T3");
   });
 });
 
@@ -182,6 +194,32 @@ describe("lintTicket — rule pack overrides", () => {
     assert.ok(custom, "Custom rule should appear in checks");
     assert.equal(custom.status, "fail");
     assert.equal(custom.message, "Must reference an epic");
+  });
+
+  it("allows rule packs to tune signal thresholds and values", async () => {
+    const pack = {
+      version: 1,
+      signals: {
+        path_recommendation: {
+          default: "A",
+          warning_threshold: 1,
+          warning_value: "C",
+        },
+        context_tier: {
+          default: "T1",
+          warning_value: "T3",
+        },
+      },
+      rules: {
+        "has-acceptance-criteria": { enabled: false },
+        "has-repo-target": { enabled: false },
+        "has-risk-classification": { enabled: false },
+        "body-min-length": { enabled: false },
+      },
+    };
+    const out = await lintTicket(badTicket, pack, opts);
+    assert.equal(out.signals.path_recommendation, "C");
+    assert.equal(out.signals.context_tier, "T3");
   });
 });
 

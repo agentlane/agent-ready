@@ -6,6 +6,7 @@ export function renderMarkdown(out: LintOutput): string {
     : `✗ **${out.ticket_id}** — not ready (${out.summary.failed} blocker(s), ${out.summary.warnings} warning(s))`;
 
   const lines = [`### agent-ready check`, "", head, ""];
+  lines.push(`Signals: Path ${out.signals.path_recommendation} | Context ${out.signals.context_tier} | Risk ${out.signals.risk_classification}`, "");
   if (out.checks.length) {
     lines.push("| | Rule | Status |");
     lines.push("|---|---|---|");
@@ -28,5 +29,6 @@ export function renderText(out: LintOutput): string {
     const icon = c.status === "pass" ? "✓" : c.status === "skip" ? "·" : c.severity === "warn" ? "⚠" : "✗";
     return `  ${icon} ${c.id.padEnd(28)}  ${c.message}`;
   });
-  return [head, "", ...rows].join("\n");
+  const signals = `Signals: path ${out.signals.path_recommendation} | context ${out.signals.context_tier} | risk ${out.signals.risk_classification}`;
+  return [head, signals, "", ...rows].join("\n");
 }
