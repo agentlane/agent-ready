@@ -2,6 +2,11 @@
 
 > A Definition-of-Ready linter for AI coding agents.
 
+[![CI](https://github.com/Schoaib/agent-ready/actions/workflows/ci.yml/badge.svg)](https://github.com/Schoaib/agent-ready/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@syedshoaib/agent-ready)](https://www.npmjs.com/package/@syedshoaib/agent-ready)
+[![GitHub release](https://img.shields.io/github/v/release/Schoaib/agent-ready)](https://github.com/Schoaib/agent-ready/releases)
+[![License](https://img.shields.io/github/license/Schoaib/agent-ready)](LICENSE)
+
 Before Copilot, Cursor, Claude Code, Codex, or any other coding agent starts work,
 `agent-ready` checks whether the issue has enough context to produce a safe, correct PR.
 
@@ -62,6 +67,14 @@ It's the **front door** of the agentic SDLC: prove the ticket is ready before an
 | Agent burns tokens on a half-baked ticket | CI fails fast (50 ms) before any tokens are spent |
 | No repo target → wrong codebase modified | `repo:` field enforced as a blocker |
 | Subjective PR review ("this doesn't match the ticket") | Objective AC checklist baked into the ticket |
+
+## Why not just use issue templates?
+
+Issue templates help humans write better tickets. `agent-ready` enforces readiness automatically.
+
+**Templates guide. `agent-ready` gates.**
+
+Use both together: templates for authoring, `agent-ready` for automated enforcement before an AI coding agent starts.
 
 ## Who is this for?
 
@@ -134,6 +147,8 @@ agent-ready check ./ticket.json --format sarif      # GitHub code-scanning
 Exit codes: `0` ready · `1` not ready · `2` usage error.
 
 ## GitHub Action
+
+Also available as a [GitHub Action on the Marketplace](https://github.com/marketplace/actions/agent-ready-check).
 
 Drop this into `.github/workflows/agent-ready.yml`:
 
