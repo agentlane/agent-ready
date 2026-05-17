@@ -94,7 +94,7 @@ export async function lintTicket(
   const pending: Promise<CheckResult>[] = [];
 
   for (const rule of BUILTIN_RULES) {
-    const cfg = ruleConfigs[rule.id] ?? { enabled: true };
+    const cfg = ruleConfigs[rule.id] ?? { enabled: rule.defaultEnabled ?? true };
     if (cfg.enabled === false) continue;
     pending.push(Promise.resolve(rule.run(ticket, cfg)));
   }

@@ -1,4 +1,5 @@
 import type { Rule, Ticket, RuleConfig, CheckResult, Severity } from "../types.js";
+import { judgeAmbiguity } from "../adapters/llm.js";
 
 const AMBIGUOUS_VERBS = [
   "improve", "optimize", "clean up", "cleanup", "refactor",
@@ -118,6 +119,32 @@ const noAmbiguousVerbs: Rule = {
     return hits.length === 0
       ? pass(this.id, sev, "No ambiguous verbs")
       : fail(this.id, sev, `Ambiguous verb(s): ${hits.join(", ")}`, "Prefer concrete verbs like 'add', 'fix', 'remove', 'replace'.");
+  }
+};
+
+const llmJudgeAmbiguity: Rule = {
+  id: "llm-judge-ambiguity",
+  defaultSeverity: "warn",
+  defaultEnabled: false,
+  async run(ticket, cfg) {
+    const sev = severityOf(cfg, this.defaultSeverity);
+    const threshold = cfg.threshold ?? 0.6;
+    try {
+      const judged = await judgeAmbiguity(ticket, cfg);
+      const message = `LLM clarity score ${judged.score.toFixed(2)}: ${judged.explanation}`;
+      const result = judged.score >= threshold
+        ? pass(this.id, sev, message)
+        : fail(this.id, sev, message, `Raise the clarity score to at least ${threshold}.`);
+      if (judged.cost_usd !== undefined) result.cost_usd = judged.cost_usd;
+      return result;
+    } catch (err) {
+      return fail(
+        this.id,
+        sev,
+        `LLM ambiguity judge unavailable: ${err instanceof Error ? err.message : String(err)}`,
+        "Disable the rule or configure provider, model, API key env var, and base URL."
+      );
+    }
   }
 };
 
@@ -272,6 +299,7 @@ export const BUILTIN_RULES: Rule[] = [
   hasRiskClassification,
   hasTestExpectations,
   noAmbiguousVerbs,
+  llmJudgeAmbiguity,
   bodyMinLength,
   noTribalKnowledge,
   tShirtSizePresent,

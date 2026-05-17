@@ -53,6 +53,17 @@ rules:
     severity: warn
     extra_terms: []
 
+  llm-judge-ambiguity:
+    enabled: false   # opt-in — calls an external LLM provider
+    severity: warn
+    provider: openai # openai | anthropic | portkey | custom
+    model: gpt-4o-mini
+    threshold: 0.6
+    # api_key_env: OPENAI_API_KEY
+    # base_url: https://api.openai.com/v1
+    # cost_per_1k_input: 0.00015
+    # cost_per_1k_output: 0.0006
+
   body-min-length:
     enabled: true
     min_count: 100

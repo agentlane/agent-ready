@@ -72,7 +72,8 @@
           "severity": { "type": "string", "enum": ["error", "warn", "info"] },
           "status": { "type": "string", "enum": ["pass", "fail", "skip"] },
           "message": { "type": "string" },
-          "hint": { "type": "string" }
+          "hint": { "type": "string" },
+          "cost_usd": { "type": "number", "minimum": 0 }
         }
       }
     }

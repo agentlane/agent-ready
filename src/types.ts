@@ -17,6 +17,14 @@ export interface RuleConfig {
   min_count?: number;
   extra_terms?: string[];
   labels?: string[];
+  // llm-judge-ambiguity
+  provider?: "openai" | "anthropic" | "portkey" | "custom";
+  model?: string;
+  threshold?: number;
+  base_url?: string;
+  api_key_env?: string;
+  cost_per_1k_input?: number;
+  cost_per_1k_output?: number;
   // links-resolve
   timeout_ms?: number;
   skip_domains?: string[];
@@ -69,6 +77,7 @@ export interface CheckResult {
   status: "pass" | "fail" | "skip";
   message: string;
   hint?: string;
+  cost_usd?: number;
 }
 
 export interface LintSignals {
@@ -106,5 +115,6 @@ export interface LintOutput {
 export interface Rule {
   id: string;
   defaultSeverity: Severity;
+  defaultEnabled?: boolean;
   run(ticket: Ticket, config: RuleConfig): CheckResult | Promise<CheckResult>;
 }
