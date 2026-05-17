@@ -14,7 +14,8 @@ Before Copilot, Cursor, Claude Code, Codex, or any other coding agent starts wor
 ```bash
 $ npx @agentlane/agent-ready check examples/tickets/bad-ticket.json
 
-✗ PROJ-1234  not ready  (4 blocker(s), 6 warning(s))
+✗ PROJ-1234  not ready  (4 blocker(s), 7 warning(s))
+Signals: path C | context T2 | risk medium
 
   ✗ has-acceptance-criteria       No acceptance criteria found (need at least 1)
   ⚠ has-definition-of-done        No Definition of Done found
@@ -26,12 +27,14 @@ $ npx @agentlane/agent-ready check examples/tickets/bad-ticket.json
   ⚠ no-tribal-knowledge           Tribal-knowledge phrase(s): you know what i mean
   ⚠ t-shirt-size-present          No t-shirt size estimate
   ⚠ has-design-link               UI ticket has no design link
+  ⚠ restricted-paths-declared     Restricted-scope signals without risk:high: checkout
 ```
 
 ```bash
 $ npx @agentlane/agent-ready check examples/tickets/good-ticket.json
 
-✓ PROJ-2042  ready  (10 checks passed)
+✓ PROJ-2042  ready  (10 checks passed, 1 warning(s))
+Signals: path B | context T2 | risk low
 ```
 
 ## Try it in 30 seconds
@@ -92,6 +95,7 @@ Use both together: templates for authoring, `agent-ready` for automated enforcem
 | `has-design-link` | Figma/Ardoq/Miro/Excalidraw link present when the ticket has a `ui`/`ux`/`frontend` label |
 | `has-test-expectations` | "How to verify" / test plan / Playwright / Jest / Pytest mentioned |
 | `no-ambiguous-verbs` | Flags vague verbs (`improve`, `optimize`, `clean up`, `refactor`, `enhance`, …) |
+| `llm-judge-ambiguity` | Optional LLM clarity score with one-sentence explanation — **opt-in** (`enabled: false` by default) |
 | `body-min-length` | Body is at least 100 characters (configurable) |
 | `no-tribal-knowledge` | Flags phrases like "as discussed", "you know what I mean", "the usual way" |
 | `t-shirt-size-present` | `size:` in the body or a `size:S|M|L|XL` label |
@@ -100,7 +104,7 @@ Use both together: templates for authoring, `agent-ready` for automated enforcem
 
 Plus user-defined custom rules of `type: regex` (see [Rule pack format](#rule-pack-format)).
 
-Every rule can be enabled, disabled, or tuned in a YAML rule pack.
+Every rule can be enabled, disabled, or tuned in a YAML rule pack. `llm-judge-ambiguity` uses `fetch` against an OpenAI-compatible, Portkey, Anthropic, or custom endpoint, so no provider SDK is installed with the package.
 
 > **Coming next:** see the [open issues](https://github.com/agentlane/agent-ready/issues) for planned rules and features.
 
@@ -223,13 +227,52 @@ rules:
     severity: warn
     extra_terms: [tidy, polish, modernize]
 
+  llm-judge-ambiguity:
+    enabled: false
+    severity: warn
+    provider: openai
+    model: gpt-4o-mini
+    threshold: 0.6
+    api_key_env: OPENAI_API_KEY
+    # Optional: annotate checks[].cost_usd when usage is returned
+    # cost_per_1k_input: 0.00015
+    # cost_per_1k_output: 0.0006
+
   custom-mentions-jira-epic:
     type: regex
     pattern: 'EPIC-\d+'
     field: body
     severity: error
     message: "Ticket must link to a parent epic (EPIC-XXX)"
+
+signals:
+  risk_classification:
+    default: medium
+    label_prefix: "risk:"
+
+  path_recommendation:
+    default: A
+    warning_threshold: 2
+    ui_value: B
+    warning_value: B
+    fail_value: C
+    high_risk_value: C
+
+  context_tier:
+    default: T1
+    body_length_t2: 800
+    body_length_t3: 2000
+    ui_value: T2
+    warning_value: T2
+    fail_value: T2
+    high_risk_value: T3
 ```
+
+The `signals` section controls deterministic routing output:
+
+- `path_recommendation`: `A`, `B`, or `C`
+- `context_tier`: `T1`, `T2`, or `T3`
+- `risk_classification`: `low`, `medium`, or `high`
 
 JSON Schemas are published in [`schema/`](schema/) — both the rule pack format ([`rule-pack.schema.json`](schema/rule-pack.schema.json)) and the CLI output ([`output.schema.json`](schema/output.schema.json)). The output schema is stable across versions; downstream tools (e.g. [Gatepack](#how-it-composes-with-the-rest-of-your-stack)) can safely consume it.
 
@@ -245,6 +288,35 @@ JSON Schemas are published in [`schema/`](schema/) — both the rule pack format
 | Gatepack *(planned)* | Per-PR signed evidence bundle (includes `agent-ready` pre-flight result) | After agent submits PR |
 | Evidence Gate Action | Traditional CI evidence (SBOM, SAST, tests) | During CI |
 | OPA / your policy engine | Decision enforcement | Throughout |
+
+### Gatepack pre-flight shape
+
+Gatepack can store the JSON result under `pre_flight.agent_ready`. The fields intended for deterministic joining are:
+
+```json
+{
+  "pre_flight": {
+    "agent_ready": {
+      "schema_version": "1.1",
+      "ticket_id": "#123",
+      "source": {
+        "adapter": "github",
+        "url": "https://github.com/agentlane/agent-ready/issues/123"
+      },
+      "rule_pack": "default",
+      "rule_pack_version": "1",
+      "rule_pack_hash": "sha256...",
+      "signals": {
+        "path_recommendation": "B",
+        "context_tier": "T2",
+        "risk_classification": "medium"
+      },
+      "ready": true,
+      "summary": { "passed": 12, "failed": 0, "warnings": 1 }
+    }
+  }
+}
+```
 
 ## Status
 

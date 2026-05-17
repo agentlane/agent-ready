@@ -16,6 +16,15 @@ const baseOut = {
   ticket_id: "PROJ-99",
   adapter: "file",
   rule_pack: "default",
+  rule_pack_version: "1",
+  source: { adapter: "file" },
+  signals: {
+    path_recommendation: "A",
+    context_tier: "T1",
+    risk_classification: "low",
+  },
+  path_recommendation: "A",
+  context_tier: "T1",
   checked_at: "2026-01-01T00:00:00.000Z",
   summary: { passed: 8, failed: 0, warnings: 0 },
   ready: true,
@@ -49,6 +58,10 @@ describe("renderText — ready ticket", () => {
 
   it("includes 'ready'", () => {
     assert.ok(renderText(baseOut).includes("ready"));
+  });
+
+  it("shows derived signals", () => {
+    assert.ok(renderText(baseOut).includes("Signals: path A | context T1 | risk low"));
   });
 
   it("shows passed count", () => {
@@ -115,6 +128,10 @@ describe("renderMarkdown — ready ticket", () => {
 
   it("says 'ready for an agent'", () => {
     assert.ok(renderMarkdown(baseOut).includes("ready for an agent"));
+  });
+
+  it("shows derived signals", () => {
+    assert.ok(renderMarkdown(baseOut).includes("Signals: Path A | Context T1 | Risk low"));
   });
 
   it("renders a markdown table", () => {

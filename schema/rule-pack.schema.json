@@ -24,9 +24,57 @@
           { "$ref": "#/$defs/customRegexRule" }
         ]
       }
+    },
+    "signals": {
+      "type": "object",
+      "description": "Deterministic routing and context signals derived from ticket labels, body size, and rule results.",
+      "properties": {
+        "risk_classification": {
+          "type": "object",
+          "properties": {
+            "default": { "type": "string", "enum": ["low", "medium", "high"] },
+            "label_prefix": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "path_recommendation": {
+          "type": "object",
+          "properties": {
+            "default": { "$ref": "#/$defs/agentPath" },
+            "warning_threshold": { "type": "integer", "minimum": 1 },
+            "warning_value": { "$ref": "#/$defs/agentPath" },
+            "fail_value": { "$ref": "#/$defs/agentPath" },
+            "high_risk_value": { "$ref": "#/$defs/agentPath" },
+            "ui_value": { "$ref": "#/$defs/agentPath" }
+          },
+          "additionalProperties": false
+        },
+        "context_tier": {
+          "type": "object",
+          "properties": {
+            "default": { "$ref": "#/$defs/contextTier" },
+            "body_length_t2": { "type": "integer", "minimum": 1 },
+            "body_length_t3": { "type": "integer", "minimum": 1 },
+            "warning_value": { "$ref": "#/$defs/contextTier" },
+            "fail_value": { "$ref": "#/$defs/contextTier" },
+            "high_risk_value": { "$ref": "#/$defs/contextTier" },
+            "ui_value": { "$ref": "#/$defs/contextTier" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   },
   "$defs": {
+    "agentPath": {
+      "type": "string",
+      "enum": ["A", "B", "C"]
+    },
+    "contextTier": {
+      "type": "string",
+      "enum": ["T1", "T2", "T3"]
+    },
     "severity": {
       "type": "string",
       "enum": ["error", "warn", "info"],
@@ -39,7 +87,14 @@
         "severity": { "$ref": "#/$defs/severity" },
         "min_count": { "type": "integer", "minimum": 1 },
         "extra_terms": { "type": "array", "items": { "type": "string" } },
-        "labels": { "type": "array", "items": { "type": "string" } }
+        "labels": { "type": "array", "items": { "type": "string" } },
+        "provider": { "type": "string", "enum": ["openai", "anthropic", "portkey", "custom"] },
+        "model": { "type": "string" },
+        "threshold": { "type": "number", "minimum": 0, "maximum": 1 },
+        "base_url": { "type": "string" },
+        "api_key_env": { "type": "string" },
+        "cost_per_1k_input": { "type": "number", "minimum": 0 },
+        "cost_per_1k_output": { "type": "number", "minimum": 0 }
       },
       "additionalProperties": true
     },

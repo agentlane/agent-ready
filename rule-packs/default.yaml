@@ -4,6 +4,28 @@
 
 version: 1
 
+signals:
+  risk_classification:
+    default: medium
+    label_prefix: "risk:"
+
+  path_recommendation:
+    default: A
+    warning_threshold: 2
+    ui_value: B
+    warning_value: B
+    fail_value: C
+    high_risk_value: C
+
+  context_tier:
+    default: T1
+    body_length_t2: 800
+    body_length_t3: 2000
+    ui_value: T2
+    warning_value: T2
+    fail_value: T2
+    high_risk_value: T3
+
 rules:
   has-acceptance-criteria:
     enabled: true
@@ -30,6 +52,17 @@ rules:
     enabled: true
     severity: warn
     extra_terms: []
+
+  llm-judge-ambiguity:
+    enabled: false   # opt-in — calls an external LLM provider
+    severity: warn
+    provider: openai # openai | anthropic | portkey | custom
+    model: gpt-4o-mini
+    threshold: 0.6
+    # api_key_env: OPENAI_API_KEY
+    # base_url: https://api.openai.com/v1
+    # cost_per_1k_input: 0.00015
+    # cost_per_1k_output: 0.0006
 
   body-min-length:
     enabled: true
