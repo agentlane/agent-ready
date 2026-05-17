@@ -1,6 +1,6 @@
 {
-  "name": "agent-ready",
-  "version": "0.0.1",
+  "name": "@syedshoaib/agent-ready",
+  "version": "0.0.2",
   "description": "Make every ticket ready for AI coding agents — a Definition-of-Ready linter.",
   "type": "module",
   "bin": {
@@ -48,7 +48,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Schoaib/agent-ready"
+    "url": "git+https://github.com/Schoaib/agent-ready.git"
   },
   "bugs": {
     "url": "https://github.com/Schoaib/agent-ready/issues"

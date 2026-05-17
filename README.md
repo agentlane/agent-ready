@@ -7,7 +7,7 @@
 If the answer is no, it tells you exactly what's missing — in seconds, in CI, in the PR comment, before any tokens are spent.
 
 ```bash
-$ npx agent-ready check examples/tickets/bad-ticket.json
+$ npx @syedshoaib/agent-ready check examples/tickets/bad-ticket.json
 
 ✗ PROJ-1234  not ready  (4 blocker(s), 6 warning(s))
 
@@ -24,7 +24,7 @@ $ npx agent-ready check examples/tickets/bad-ticket.json
 ```
 
 ```bash
-$ npx agent-ready check examples/tickets/good-ticket.json
+$ npx @syedshoaib/agent-ready check examples/tickets/good-ticket.json
 
 ✓ PROJ-2042  ready  (10 checks passed)
 ```
@@ -66,13 +66,13 @@ Every rule can be enabled, disabled, or tuned in a YAML rule pack.
 
 ```bash
 # One-off use with a local ticket file
-npx agent-ready check <path-to-ticket-json>
+npx @syedshoaib/agent-ready check <path-to-ticket-json>
 
 # Or fetch a real GitHub Issue
-npx agent-ready check owner/repo#123 --adapter github
+npx @syedshoaib/agent-ready check owner/repo#123 --adapter github
 
 # Or install globally
-npm i -g agent-ready
+npm i -g @syedshoaib/agent-ready
 agent-ready check ./ticket.json
 ```
 
@@ -175,14 +175,14 @@ JSON Schemas are published in [`schema/`](schema/) — both the rule pack format
 
 ## Status
 
-**v0.0.1.** Schemas, CLI, file and GitHub adapters, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
+**v0.0.2.** Schemas, CLI, file and GitHub adapters, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
 
 ## Releases
 
 GitHub Action users should pin either:
 
 ```yaml
-- uses: Schoaib/agent-ready@v0.0.1  # exact release
+- uses: Schoaib/agent-ready@v0.0.2  # exact release
 - uses: Schoaib/agent-ready@v0      # latest v0 release
 ```
 
