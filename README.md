@@ -6,6 +6,8 @@
 
 If the answer is no, it tells you exactly what's missing — in seconds, in CI, in the PR comment, before any tokens are spent.
 
+![agent-ready demo](docs/demo.gif)
+
 ```bash
 $ npx @syedshoaib/agent-ready check examples/tickets/bad-ticket.json
 
@@ -40,6 +42,17 @@ Agents are confident and fast. Without a clear ticket, that's a liability — th
 `agent-ready` is the cheap, automated gate that catches this. It runs in 50ms, has zero infrastructure, and plugs into Issue templates and PR workflows everyone already uses.
 
 It's the **front door** of the agentic SDLC: prove the ticket is ready before any agent touches it.
+
+### Before vs. after
+
+| Without `agent-ready` | With `agent-ready` |
+|---|---|
+| Agent invents missing context | Ticket validated before agent picks it up |
+| Vague verbs slip through ("improve", "clean up") | Ambiguous verbs flagged at issue-open time |
+| No design link → agent guesses UI | UI tickets require a Figma/Miro link |
+| Agent burns tokens on a half-baked ticket | CI fails fast (50 ms) before any tokens are spent |
+| No repo target → wrong codebase modified | `repo:` field enforced as a blocker |
+| Subjective PR review ("this doesn't match the ticket") | Objective AC checklist baked into the ticket |
 
 ## What it checks (v0 default rule pack — 10 rules)
 
