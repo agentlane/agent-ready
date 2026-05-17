@@ -22,7 +22,7 @@ inputs:
     required: false
     default: "true"
   github-token:
-    description: "Token used to fetch and comment on GitHub Issues. Pass `${{ github.token }}` from workflows."
+    description: "Token used to fetch and comment on GitHub Issues."
     required: false
 
 outputs:
