@@ -21,7 +21,7 @@
     "start": "node dist/cli.js",
     "check:bad": "node dist/cli.js check examples/tickets/bad-ticket.json",
     "check:good": "node dist/cli.js check examples/tickets/good-ticket.json",
-    "test": "node --test test/"
+    "test": "node --test test/*.test.js"
   },
   "engines": {
     "node": ">=20"

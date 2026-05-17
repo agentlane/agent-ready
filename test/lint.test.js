@@ -1,0 +1,195 @@
+/**
+ * Integration tests for lintTicket().
+ * Verifies that the orchestrator correctly aggregates rule results,
+ * computes ready/not-ready, and respects enabled/disabled overrides.
+ * Runs via: node --test test/lint.test.js
+ * Requires: npm run build
+ */
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { lintTicket } from "../dist/lint.js";
+
+// Shared opts
+const opts = { adapter: "file", rulePackName: "default" };
+
+// Empty pack → all built-ins run at their defaults
+const emptyPack = { version: 1, rules: {} };
+
+// ─── Fixtures ──────────────────────────────────────────────────────────────
+
+const badTicket = {
+  id: "PROJ-1234",
+  title: "Improve the checkout flow",
+  body: "We should improve checkout. Make it better, you know what I mean. Discussed in the meeting.",
+  labels: ["frontend"],
+};
+
+const goodTicket = {
+  id: "PROJ-2042",
+  title: "Add retry logic to checkout payment API",
+  body: [
+    "repo: acme/checkout",
+    "",
+    "## Problem",
+    "Payment calls fail silently on network hiccup. Adds user frustration.",
+    "A" + "x".repeat(50),
+    "",
+    "## Acceptance criteria",
+    "- [ ] Retries up to 3 times with exponential backoff",
+    "- [ ] Error surfaced to user after final failure",
+    "- [ ] No duplicate charges (idempotency key sent)",
+    "",
+    "## Definition of Done",
+    "- Unit tests pass (Jest)",
+    "- E2E Playwright test covers the retry flow",
+    "- PR reviewed by a second engineer",
+    "",
+    "## How to verify",
+    "Run `jest payment` and the Playwright suite locally.",
+    "",
+    "size: M",
+    "",
+    "Design: https://figma.com/file/abc/Checkout",
+  ].join("\n"),
+  labels: ["risk:low", "size:m", "repo:acme-checkout", "frontend"],
+};
+
+// ─── bad ticket ────────────────────────────────────────────────────────────
+
+describe("lintTicket — bad ticket", () => {
+  it("returns ready: false", () => {
+    const out = lintTicket(badTicket, emptyPack, opts);
+    assert.equal(out.ready, false);
+  });
+
+  it("has at least 1 error-level failure", () => {
+    const out = lintTicket(badTicket, emptyPack, opts);
+    assert.ok(out.summary.failed >= 1);
+  });
+
+  it("contains the expected schema fields", () => {
+    const out = lintTicket(badTicket, emptyPack, opts);
+    assert.equal(out.schema_version, "1.0");
+    assert.equal(out.ticket_id, "PROJ-1234");
+    assert.equal(out.adapter, "file");
+    assert.ok(typeof out.checked_at === "string");
+    assert.ok(Array.isArray(out.checks));
+  });
+
+  it("flags no-tribal-knowledge for 'as discussed' + 'you know what i mean'", () => {
+    const out = lintTicket(badTicket, emptyPack, opts);
+    const tribal = out.checks.find((c) => c.id === "no-tribal-knowledge");
+    assert.ok(tribal, "tribal-knowledge check missing");
+    assert.equal(tribal.status, "fail");
+  });
+
+  it("flags no-ambiguous-verbs for 'improve'", () => {
+    const out = lintTicket(badTicket, emptyPack, opts);
+    const ambig = out.checks.find((c) => c.id === "no-ambiguous-verbs");
+    assert.ok(ambig);
+    assert.equal(ambig.status, "fail");
+  });
+
+  it("flags has-risk-classification (no label)", () => {
+    const out = lintTicket(badTicket, emptyPack, opts);
+    const risk = out.checks.find((c) => c.id === "has-risk-classification");
+    assert.ok(risk);
+    assert.equal(risk.status, "fail");
+  });
+});
+
+// ─── good ticket ───────────────────────────────────────────────────────────
+
+describe("lintTicket — good ticket", () => {
+  it("returns ready: true", () => {
+    const out = lintTicket(goodTicket, emptyPack, opts);
+    assert.equal(out.ready, true);
+  });
+
+  it("has 0 error-level failures", () => {
+    const out = lintTicket(goodTicket, emptyPack, opts);
+    assert.equal(out.summary.failed, 0);
+  });
+
+  it("passes all 10 built-in rules (or skips non-applicable)", () => {
+    const out = lintTicket(goodTicket, emptyPack, opts);
+    for (const c of out.checks) {
+      assert.ok(
+        c.status === "pass" || c.status === "skip",
+        `Expected pass/skip for ${c.id}, got ${c.status}: ${c.message}`
+      );
+    }
+  });
+});
+
+// ─── rule pack overrides ────────────────────────────────────────────────────
+
+describe("lintTicket — rule pack overrides", () => {
+  it("skips a rule when enabled: false", () => {
+    const pack = {
+      version: 1,
+      rules: { "has-risk-classification": { enabled: false } },
+    };
+    const out = lintTicket(badTicket, pack, opts);
+    const found = out.checks.find((c) => c.id === "has-risk-classification");
+    assert.equal(found, undefined, "Rule should be absent when disabled");
+  });
+
+  it("changes severity via rule pack", () => {
+    const pack = {
+      version: 1,
+      rules: { "has-acceptance-criteria": { severity: "warn" } },
+    };
+    const out = lintTicket(badTicket, pack, opts);
+    const ac = out.checks.find((c) => c.id === "has-acceptance-criteria");
+    assert.ok(ac);
+    assert.equal(ac.severity, "warn");
+  });
+
+  it("ready: true when only warn-level failures remain", () => {
+    // Disable all error-severity rules; ticket still has warn failures
+    const pack = {
+      version: 1,
+      rules: {
+        "has-acceptance-criteria": { enabled: false },
+        "has-repo-target": { enabled: false },
+        "has-risk-classification": { enabled: false },
+        "body-min-length": { enabled: false },
+      },
+    };
+    const out = lintTicket(badTicket, pack, opts);
+    assert.equal(out.ready, true);
+    assert.equal(out.summary.failed, 0);
+  });
+
+  it("runs custom regex rule", () => {
+    const pack = {
+      version: 1,
+      rules: {
+        "custom-epic-link": {
+          type: "regex",
+          pattern: "EPIC-\\d+",
+          field: "body",
+          severity: "error",
+          message: "Must reference an epic",
+        },
+      },
+    };
+    const out = lintTicket(badTicket, pack, opts);
+    const custom = out.checks.find((c) => c.id === "custom-epic-link");
+    assert.ok(custom, "Custom rule should appear in checks");
+    assert.equal(custom.status, "fail");
+    assert.equal(custom.message, "Must reference an epic");
+  });
+});
+
+// ─── summary counts ────────────────────────────────────────────────────────
+
+describe("lintTicket — summary arithmetic", () => {
+  it("passed + failed + warnings equals visible checks (excl. skip)", () => {
+    const out = lintTicket(badTicket, emptyPack, opts);
+    const nonSkip = out.checks.filter((c) => c.status !== "skip").length;
+    const total = out.summary.passed + out.summary.failed + out.summary.warnings;
+    assert.equal(total, nonSkip);
+  });
+});
