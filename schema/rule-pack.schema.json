@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ready.dev/schema/rule-pack.v1.json",
+  "title": "agent-ready rule pack",
+  "description": "Declarative ruleset describing what makes a ticket 'ready' for an AI coding agent.",
+  "type": "object",
+  "required": ["version"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Rule pack schema version."
+    },
+    "extends": {
+      "type": "string",
+      "description": "Name of a built-in pack to inherit from (e.g. 'default', 'strict'). Local overrides win."
+    },
+    "rules": {
+      "type": "object",
+      "description": "Map of rule-id -> rule configuration. Rule ids match built-in rule names, or define a 'type' for custom rules.",
+      "additionalProperties": {
+        "oneOf": [
+          { "$ref": "#/$defs/builtinRuleConfig" },
+          { "$ref": "#/$defs/customRegexRule" }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "severity": {
+      "type": "string",
+      "enum": ["error", "warn", "info"],
+      "default": "error"
+    },
+    "builtinRuleConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "severity": { "$ref": "#/$defs/severity" },
+        "min_count": { "type": "integer", "minimum": 1 },
+        "extra_terms": { "type": "array", "items": { "type": "string" } },
+        "labels": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "customRegexRule": {
+      "type": "object",
+      "required": ["type", "pattern", "field"],
+      "properties": {
+        "type": { "const": "regex" },
+        "pattern": { "type": "string", "description": "JavaScript regex pattern." },
+        "flags": { "type": "string", "default": "i" },
+        "field": {
+          "type": "string",
+          "enum": ["title", "body", "labels", "any"],
+          "description": "Where to apply the pattern."
+        },
+        "must_match": { "type": "boolean", "default": true },
+        "severity": { "$ref": "#/$defs/severity" },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+name: agent-ready
+description: Make every ticket ready for AI coding agents. Runs the agent-ready linter against a GitHub Issue.
+author: agent-ready contributors
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  issue-number:
+    description: "Issue number to check. Defaults to the triggering issue."
+    required: false
+  rules:
+    description: "Path (in the repo) to a custom rule pack YAML. Defaults to the built-in 'default' pack."
+    required: false
+    default: ""
+  comment-on-issue:
+    description: "Post the result as a comment on the issue."
+    required: false
+    default: "true"
+  fail-on-not-ready:
+    description: "Exit non-zero when the issue is not ready. Use with required-status-checks."
+    required: false
+    default: "true"
+
+outputs:
+  ready:
+    description: "'true' or 'false' — whether the ticket passed."
+  failed-count:
+    description: "Number of error-severity rules that failed."
+  warnings-count:
+    description: "Number of warn-severity rules that failed."
+
+runs:
+  using: docker
+  image: Dockerfile

@@ -1,0 +1,26 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run build
+      - name: Lint bad-ticket (expect fail)
+        run: |
+          set +e
+          node dist/cli.js check examples/tickets/bad-ticket.json
+          code=$?
+          if [ $code -ne 1 ]; then
+            echo "Expected exit 1 for bad-ticket, got $code" && exit 1
+          fi
+      - name: Lint good-ticket (expect pass)
+        run: node dist/cli.js check examples/tickets/good-ticket.json

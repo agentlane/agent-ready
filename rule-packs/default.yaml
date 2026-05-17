@@ -1,0 +1,50 @@
+# agent-ready default rule pack
+# Loaded automatically when no --rules flag is passed.
+# Override per-rule by writing your own .agent-ready/rules.yaml with `extends: default`.
+
+version: 1
+
+rules:
+  has-acceptance-criteria:
+    enabled: true
+    min_count: 1
+    severity: error
+
+  has-definition-of-done:
+    enabled: true
+    severity: warn
+
+  has-repo-target:
+    enabled: true
+    severity: error
+
+  has-risk-classification:
+    enabled: true
+    severity: error
+
+  has-test-expectations:
+    enabled: true
+    severity: warn
+
+  no-ambiguous-verbs:
+    enabled: true
+    severity: warn
+    extra_terms: []
+
+  body-min-length:
+    enabled: true
+    min_count: 100
+    severity: error
+
+  no-tribal-knowledge:
+    enabled: true
+    severity: warn
+
+  t-shirt-size-present:
+    enabled: true
+    severity: warn
+
+  has-design-link:
+    enabled: true
+    severity: warn
+    labels: [ui, ux, frontend]

@@ -1,0 +1,7 @@
+{
+  "id": "PROJ-1234",
+  "title": "Improve the checkout flow",
+  "body": "We should improve checkout. Make it better, you know what I mean. Discussed in the meeting.",
+  "labels": ["frontend"],
+  "url": "https://example.com/issues/PROJ-1234"
+}

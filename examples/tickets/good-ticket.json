@@ -1,0 +1,7 @@
+{
+  "id": "PROJ-2042",
+  "title": "Add inline validation to the checkout email field",
+  "body": "## Context\n\nUsers currently only see email-format errors after submitting the checkout form. We want to validate inline as they type so they can fix typos without losing context.\n\n## Acceptance criteria\n\n- [ ] When the user types in the email field, validate format on blur\n- [ ] Show a red helper text below the field when the format is invalid\n- [ ] Disable the 'Continue' button while the email field is invalid\n- [ ] Validation must not fire while the field is empty (no premature error state)\n\n## Definition of Done\n\n- Unit tests cover all four AC items above\n- Playwright e2e test covers the happy path + one invalid case\n- No regression in the checkout form Lighthouse score (>=92)\n\n## How to verify\n\nRun `pnpm test:e2e -- checkout-email-validation` and confirm both specs pass.\n\nrepo: shop-frontend\nsize: S\n\nFigma: https://figma.com/file/abc123/checkout-validation",
+  "labels": ["frontend", "ui", "risk:low", "size:S"],
+  "url": "https://example.com/issues/PROJ-2042"
+}

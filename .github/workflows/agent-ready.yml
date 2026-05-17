@@ -1,0 +1,23 @@
+# Example workflow — copy this into a consuming repo at .github/workflows/agent-ready.yml.
+# In this repo it's a reference implementation, not a self-check.
+
+name: Agent-Ready Check
+on:
+  issues:
+    types: [opened, edited, labeled]
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          rules: .agent-ready/rules.yaml
+          comment-on-issue: true
+          fail-on-not-ready: true

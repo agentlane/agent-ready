@@ -1,0 +1,53 @@
+{
+  "name": "agent-ready",
+  "version": "0.0.1",
+  "description": "Make every ticket ready for AI coding agents — a Definition-of-Ready linter.",
+  "type": "module",
+  "bin": {
+    "agent-ready": "dist/cli.js",
+    "story-lint": "dist/cli.js"
+  },
+  "main": "dist/lint.js",
+  "types": "dist/lint.d.ts",
+  "files": [
+    "dist",
+    "rule-packs",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "check:bad": "node dist/cli.js check examples/tickets/bad-ticket.json",
+    "check:good": "node dist/cli.js check examples/tickets/good-ticket.json",
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "sdlc",
+    "linter",
+    "definition-of-ready",
+    "jira",
+    "github-issues",
+    "copilot",
+    "claude-code",
+    "cursor"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/agent-ready"
+  }
+}
