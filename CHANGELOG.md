@@ -23,5 +23,5 @@ First public release. MLP scope.
 - README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT
 - MIT license
 
-[Unreleased]: https://github.com/Schoaib/agent-ready/compare/v0.0.1...HEAD
-[0.0.1]: https://github.com/Schoaib/agent-ready/releases/tag/v0.0.1
+[Unreleased]: https://github.com/agentlane/agent-ready/compare/v0.0.1...HEAD
+[0.0.1]: https://github.com/agentlane/agent-ready/releases/tag/v0.0.1

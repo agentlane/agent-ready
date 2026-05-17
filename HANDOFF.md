@@ -10,10 +10,10 @@ Everything a fresh Claude session needs to continue work on this repo without re
 
 Before Copilot, Cursor, Claude Code, or Codex starts work, `agent-ready` checks whether the issue has enough context to produce a safe, correct PR.
 
-- **CLI:** `npx @syedshoaib/agent-ready check <ticket>`
+- **CLI:** `npx @agentlane/agent-ready check <ticket>`
 - **GitHub Action:** posts a comment + sets/removes an `agent-ready` label on the issue
-- **npm:** `@syedshoaib/agent-ready` at version `0.0.3`
-- **GitHub:** `https://github.com/Schoaib/agent-ready` (public)
+- **npm:** `@agentlane/agent-ready` at version `0.0.3`
+- **GitHub:** `https://github.com/agentlane/agent-ready` (public)
 - **Local path:** `/Users/shoaib/GitHub/agent-ready`
 
 ---
@@ -109,10 +109,10 @@ entrypoint.sh          — Action entrypoint: fetch issue → lint → comment �
 
 | # | Title | Priority |
 |---|---|---|
-| [#1](https://github.com/Schoaib/agent-ready/issues/1) | Native Jira/Linear CLI adapters | High — GitHub adapter done, Jira/Linear still todo |
-| [#4](https://github.com/Schoaib/agent-ready/issues/4) | path_recommendation + context-tier output fields | Medium |
-| [#6](https://github.com/Schoaib/agent-ready/issues/6) | Gatepack-ready evidence metadata in JSON output | Medium |
-| [#17](https://github.com/Schoaib/agent-ready/issues/17) | LLM judge for no-ambiguous-verbs (opt-in) | Good first issue |
+| [#1](https://github.com/agentlane/agent-ready/issues/1) | Native Jira/Linear CLI adapters | High — GitHub adapter done, Jira/Linear still todo |
+| [#4](https://github.com/agentlane/agent-ready/issues/4) | path_recommendation + context-tier output fields | Medium |
+| [#6](https://github.com/agentlane/agent-ready/issues/6) | Gatepack-ready evidence metadata in JSON output | Medium |
+| [#17](https://github.com/agentlane/agent-ready/issues/17) | LLM judge for no-ambiguous-verbs (opt-in) | Good first issue |
 
 > Note: Issues #2, #3, #7, #9 are implemented but may still show open on GitHub — check if they need manual closing.
 
@@ -132,7 +132,7 @@ npx . check examples/tickets/bad-ticket.json
 npx . check examples/tickets/good-ticket.json
 
 # Lint a GitHub issue
-npx . check Schoaib/agent-ready#1 --adapter github
+npx . check agentlane/agent-ready#1 --adapter github
 
 # Output formats
 npx . check examples/tickets/bad-ticket.json --format json
@@ -146,12 +146,11 @@ git push
 
 ## Naming / org context
 
-The project currently lives under `Schoaib` (personal GitHub) and `@syedshoaib` (npm).
-Plan is to migrate to the **`agentlane`** org on both GitHub and npm:
-- GitHub: `github.com/agentlane/agent-ready` (org name confirmed available)
-- npm: `@agentlane/agent-ready` (scope confirmed available, 0 packages)
-
-Migration not done yet — still under `Schoaib/agent-ready`.
+Code references migrated to **`agentlane`** org (GitHub + npm) in this branch. Manual steps still required:
+- Create `agentlane` GitHub org → transfer `Schoaib/agent-ready` repo
+- Create `@agentlane` npm org → publish `0.0.4` as `@agentlane/agent-ready`
+- Deprecate `@syedshoaib/agent-ready` on npm with pointer message
+- Re-tag `v0` and `v0.0.4` in new org
 
 ---
 

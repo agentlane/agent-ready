@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security report
-    url: https://github.com/Schoaib/agent-ready/security/advisories/new
+    url: https://github.com/agentlane/agent-ready/security/advisories/new
     about: Found a vulnerability? Please report it privately — do not open a public issue.
   - name: Discussion
-    url: https://github.com/Schoaib/agent-ready/discussions
+    url: https://github.com/agentlane/agent-ready/discussions
     about: For questions, ideas, or anything that isn't a bug or a rule proposal.

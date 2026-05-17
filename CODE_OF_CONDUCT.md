@@ -26,7 +26,7 @@ Examples of unacceptable behavior:
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported privately via GitHub's [private vulnerability reporting](https://github.com/Schoaib/agent-ready/security/advisories/new) (the same channel as security reports — it routes to the maintainer). All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported privately via GitHub's [private vulnerability reporting](https://github.com/agentlane/agent-ready/security/advisories/new) (the same channel as security reports — it routes to the maintainer). All complaints will be reviewed and investigated promptly and fairly.
 
 ## Attribution
 

@@ -12,7 +12,7 @@
 
 Please **do not** open a public issue for a security problem.
 
-Report privately via GitHub's [private vulnerability reporting](https://github.com/Schoaib/agent-ready/security/advisories/new). Include:
+Report privately via GitHub's [private vulnerability reporting](https://github.com/agentlane/agent-ready/security/advisories/new). Include:
 
 - A description of the issue and its impact
 - A minimal reproduction
