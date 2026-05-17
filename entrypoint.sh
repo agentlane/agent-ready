@@ -22,6 +22,10 @@ FAIL="$(input_value FAIL_ON_NOT_READY)"
 if [ -z "$FAIL" ]; then FAIL="$(input_value FAIL-ON-NOT-READY)"; fi
 FAIL="${FAIL:-true}"
 
+SET_LABEL="$(input_value SET_LABEL)"
+if [ -z "$SET_LABEL" ]; then SET_LABEL="$(input_value SET-LABEL)"; fi
+SET_LABEL="${SET_LABEL:-true}"
+
 TOKEN="$(input_value GITHUB_TOKEN)"
 if [ -z "$TOKEN" ]; then TOKEN="$(input_value GITHUB-TOKEN)"; fi
 TOKEN="${TOKEN:-${GITHUB_TOKEN:-}}"
@@ -87,6 +91,38 @@ if [ "$COMMENT" = "true" ]; then
     -H "Accept: application/vnd.github+json" \
     "https://api.github.com/repos/${REPO}/issues/${ISSUE_NUMBER}/comments" \
     -d "{\"body\": $COMMENT_BODY}" > /dev/null
+fi
+
+# Set / remove agent-ready label
+if [ "$SET_LABEL" = "true" ]; then
+  if [ -z "$TOKEN" ]; then
+    echo "agent-ready: cannot set label without github-token or GITHUB_TOKEN (skipping)"
+  else
+    ISSUE_LABELS_API="https://api.github.com/repos/${REPO}/issues/${ISSUE_NUMBER}/labels"
+    REPO_LABELS_API="https://api.github.com/repos/${REPO}/labels"
+    if [ "$READY" = "true" ]; then
+      # Ensure the label exists in the repo (create if absent, ignore 422 if already there)
+      curl -sSL -X POST \
+        -H "Authorization: token ${TOKEN}" \
+        -H "Accept: application/vnd.github+json" \
+        "$REPO_LABELS_API" \
+        -d '{"name":"agent-ready","color":"0E8A16","description":"Ticket passed all agent-ready checks"}' \
+        > /dev/null 2>&1 || true
+      # Add label to issue
+      curl -sSL -X POST \
+        -H "Authorization: token ${TOKEN}" \
+        -H "Accept: application/vnd.github+json" \
+        "$ISSUE_LABELS_API" \
+        -d '{"labels":["agent-ready"]}' > /dev/null
+    else
+      # Remove label from issue (ignore 404 — label may not be present)
+      curl -sSL -X DELETE \
+        -H "Authorization: token ${TOKEN}" \
+        -H "Accept: application/vnd.github+json" \
+        "$ISSUE_LABELS_API/agent-ready" \
+        > /dev/null 2>&1 || true
+    fi
+  fi
 fi
 
 if [ "$READY" != "true" ] && [ "$FAIL" = "true" ]; then

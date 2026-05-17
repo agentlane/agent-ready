@@ -24,6 +24,10 @@ inputs:
   github-token:
     description: "Token used to fetch and comment on GitHub Issues."
     required: false
+  set-label:
+    description: "Add the `agent-ready` label when ready, remove it when not. Label is created automatically if it does not exist in the repo."
+    required: false
+    default: "true"
 
 outputs:
   ready:

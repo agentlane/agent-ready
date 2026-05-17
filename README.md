@@ -137,11 +137,12 @@ jobs:
           rules: .agent-ready/rules.yaml   # optional
           comment-on-issue: true
           fail-on-not-ready: true
+          set-label: true                  # adds/removes the `agent-ready` label
 ```
 
 The action fetches the triggering issue from the GitHub API, normalizes it into the linter's ticket shape, runs the lint, posts the result as a comment, and writes outputs (`ready`, `failed-count`, `warnings-count`). When `fail-on-not-ready: true`, the step exits non-zero so the issue check shows red until the ticket is fixed.
 
-> **Coming next:** [issue #3](https://github.com/Schoaib/agent-ready/issues/3) tracks adding an automatic `agent-ready` label so downstream workflows can trigger on the label rather than parsing comments.
+When `set-label: true` (the default), the action adds the `agent-ready` label to the issue when it passes and removes it when it fails. The label is created automatically in the repo if it doesn't exist. This lets downstream agent workflows trigger on the label — for example, kicking off a Copilot or Claude Code run only when `agent-ready` appears.
 
 ## Rule pack format
 
