@@ -2,10 +2,7 @@
 
 > A Definition-of-Ready linter for AI coding agents.
 
-[![CI](https://github.com/agentlane/agent-ready/actions/workflows/ci.yml/badge.svg)](https://github.com/agentlane/agent-ready/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@agentlane/agent-ready)](https://www.npmjs.com/package/@agentlane/agent-ready)
-[![GitHub release](https://img.shields.io/github/v/release/agentlane/agent-ready)](https://github.com/agentlane/agent-ready/releases)
-[![License](https://img.shields.io/github/license/agentlane/agent-ready)](LICENSE)
+[![CI](https://github.com/agentlane/agent-ready/actions/workflows/ci.yml/badge.svg)](https://github.com/agentlane/agent-ready/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/@agentlane/agent-ready)](https://www.npmjs.com/package/@agentlane/agent-ready) [![GitHub release](https://img.shields.io/github/v/release/agentlane/agent-ready)](https://github.com/agentlane/agent-ready/releases) [![License](https://img.shields.io/github/license/agentlane/agent-ready)](LICENSE)
 
 Before Copilot, Cursor, Claude Code, Codex, or any other coding agent starts work,
 `agent-ready` checks whether the issue has enough context to produce a safe, correct PR.
