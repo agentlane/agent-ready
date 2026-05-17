@@ -1,16 +1,53 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://agent-ready.dev/schema/output.v1.json",
+  "$id": "https://agent-ready.dev/schema/output.v1.1.json",
   "title": "agent-ready CLI output",
   "description": "Machine-readable result of an agent-ready check. Stable across versions; safe to consume in CI and downstream tools (e.g. Gatepack).",
   "type": "object",
-  "required": ["schema_version", "ticket_id", "ready", "checks", "summary"],
+  "required": ["schema_version", "ticket_id", "ready", "checks", "summary", "source", "signals"],
   "properties": {
-    "schema_version": { "type": "string", "const": "1.0" },
+    "schema_version": { "type": "string", "const": "1.1" },
     "agent_ready_version": { "type": "string" },
     "ticket_id": { "type": "string" },
     "adapter": { "type": "string", "enum": ["file", "github", "jira", "linear"] },
     "rule_pack": { "type": "string" },
+    "rule_pack_version": { "type": "string" },
+    "rule_pack_hash": {
+      "type": "string",
+      "description": "sha256 hash of the resolved rule pack content."
+    },
+    "source": {
+      "type": "object",
+      "required": ["adapter"],
+      "properties": {
+        "adapter": { "type": "string", "enum": ["file", "github", "jira", "linear"] },
+        "url": { "type": "string" },
+        "path": { "type": "string" },
+        "commit_sha": { "type": "string" },
+        "ref": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "signals": {
+      "type": "object",
+      "required": ["path_recommendation", "context_tier", "risk_classification"],
+      "properties": {
+        "path_recommendation": { "type": "string", "enum": ["A", "B", "C"] },
+        "context_tier": { "type": "string", "enum": ["T1", "T2", "T3"] },
+        "risk_classification": { "type": "string", "enum": ["low", "medium", "high"] }
+      },
+      "additionalProperties": false
+    },
+    "path_recommendation": {
+      "type": "string",
+      "enum": ["A", "B", "C"],
+      "description": "Top-level alias for signals.path_recommendation."
+    },
+    "context_tier": {
+      "type": "string",
+      "enum": ["T1", "T2", "T3"],
+      "description": "Top-level alias for signals.context_tier."
+    },
     "checked_at": { "type": "string", "format": "date-time" },
     "ready": {
       "type": "boolean",

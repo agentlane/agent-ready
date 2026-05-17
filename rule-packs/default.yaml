@@ -4,6 +4,28 @@
 
 version: 1
 
+signals:
+  risk_classification:
+    default: medium
+    label_prefix: "risk:"
+
+  path_recommendation:
+    default: A
+    warning_threshold: 2
+    ui_value: B
+    warning_value: B
+    fail_value: C
+    high_risk_value: C
+
+  context_tier:
+    default: T1
+    body_length_t2: 800
+    body_length_t3: 2000
+    ui_value: T2
+    warning_value: T2
+    fail_value: T2
+    high_risk_value: T3
+
 rules:
   has-acceptance-criteria:
     enabled: true
