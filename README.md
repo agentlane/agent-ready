@@ -1,10 +1,11 @@
 # agent-ready
 
-> Make every ticket ready for AI coding agents.
+> A Definition-of-Ready linter for AI coding agents.
 
-`agent-ready` is a Definition-of-Ready linter that runs **before** an AI coding agent picks up a ticket. It answers one question: *is this issue actually ready for an agent to work on?*
+Before Copilot, Cursor, Claude Code, Codex, or any other coding agent starts work,
+`agent-ready` checks whether the issue has enough context to produce a safe, correct PR.
 
-If the answer is no, it tells you exactly what's missing — in seconds, in CI, in the PR comment, before any tokens are spent.
+**Bad ticket in → exact gaps out — in 50 ms, before any tokens are spent.**
 
 ![agent-ready demo](docs/demo.gif)
 
@@ -31,6 +32,14 @@ $ npx @syedshoaib/agent-ready check examples/tickets/good-ticket.json
 ✓ PROJ-2042  ready  (10 checks passed)
 ```
 
+## Try it in 30 seconds
+
+```bash
+npx @syedshoaib/agent-ready check https://github.com/Schoaib/agent-ready/issues/1 --adapter github
+```
+
+No install needed. Uses your existing `gh auth token` or set `GITHUB_TOKEN`.
+
 ## Why this exists
 
 Every team adopting Copilot, Cursor, Claude Code, or Codex agents hits the same wall:
@@ -53,6 +62,14 @@ It's the **front door** of the agentic SDLC: prove the ticket is ready before an
 | Agent burns tokens on a half-baked ticket | CI fails fast (50 ms) before any tokens are spent |
 | No repo target → wrong codebase modified | `repo:` field enforced as a blocker |
 | Subjective PR review ("this doesn't match the ticket") | Objective AC checklist baked into the ticket |
+
+## Who is this for?
+
+- **Open-source maintainers** — gate AI-generated PRs before accepting them; require issues to meet your readiness bar first
+- **Platform / DevEx teams** — enforce a pre-flight check before any coding agent starts work, company-wide
+- **DevSecOps teams** — auditable, automated evidence that restricted-scope tickets declared risk correctly
+- **Product owners** — force better specs before engineering starts; catch "as discussed" and missing AC early
+- **Teams using Copilot, Cursor, Claude Code, Codex, or any custom agent** — stop wasting tokens on half-baked tickets
 
 ## What it checks (12 built-in rules)
 
@@ -147,6 +164,29 @@ The action fetches the triggering issue from the GitHub API, normalizes it into 
 
 When `set-label: true` (the default), the action adds the `agent-ready` label to the issue when it passes and removes it when it fails. The label is created automatically in the repo if it doesn't exist. This lets downstream agent workflows trigger on the label — for example, kicking off a Copilot or Claude Code run only when `agent-ready` appears.
 
+### Triggering a coding agent only when ready
+
+Because `agent-ready` sets the label, a second workflow can fire exactly once per passing issue — not on every edit:
+
+```yaml
+# .github/workflows/start-agent.yml
+name: Start coding agent
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  dispatch:
+    if: github.event.label.name == 'agent-ready'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger your agent
+        run: echo "Issue ${{ github.event.issue.number }} is ready — dispatch agent here"
+        # Replace with: gh workflow run, invoke Copilot, call Claude Code CLI, etc.
+```
+
+The `agent-ready` label is added when the issue passes and removed when it fails — so this workflow fires once per pass, not on every edit. See [docs/use-cases.md](docs/use-cases.md) for full walkthrough examples.
+
 ## Rule pack format
 
 Rule packs are plain YAML. Mix built-ins with custom rules of `type: regex`:
@@ -192,7 +232,7 @@ JSON Schemas are published in [`schema/`](schema/) — both the rule pack format
 
 ## Status
 
-**Current release: 0.0.3.** Schemas, CLI, file and GitHub adapters, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
+**Current release: 0.0.3.** Schemas, CLI, file and GitHub adapters, 12 built-in rules, regex custom rules, JSON/markdown/text/SARIF renderers, GitHub Action with label setter (Docker-based), and a CI workflow that runs build + tests on every PR. All verified end-to-end.
 
 ## Releases
 
@@ -208,16 +248,22 @@ GitHub Action users should pin either:
 Track all planned work in [GitHub Issues](https://github.com/Schoaib/agent-ready/issues). Highlights:
 
 - Native CLI adapters for Jira and Linear ([#1](https://github.com/Schoaib/agent-ready/issues/1))
-- `links-resolve` and `restricted-paths-declared` rules ([#2](https://github.com/Schoaib/agent-ready/issues/2))
-- Automatic `agent-ready` label setter on issues ([#3](https://github.com/Schoaib/agent-ready/issues/3))
-- SARIF output format ([#7](https://github.com/Schoaib/agent-ready/issues/7))
 - LLM judge for `no-ambiguous-verbs` — opt-in ([#17](https://github.com/Schoaib/agent-ready/issues/17))
 - VS Code extension: lint as you type
 - Node plugin loader for custom rules (beyond regex)
 
 ## Contributing
 
-Rules are the easiest contribution path — one rule = one entry in `src/rules/built-in.ts` + one fixture in `examples/tickets/`. Browse [good first issues](https://github.com/Schoaib/agent-ready/issues?q=is%3Aopen+label%3A%22good+first+issue%22) to get started. PRs welcome.
+Rules are the easiest contribution path — one rule = one entry in `src/rules/built-in.ts` + one fixture in `examples/tickets/`.
+
+**Good first contributions (no deep codebase knowledge needed):**
+- Add a new readiness rule
+- Add a bad/good ticket example pair
+- Write a use-case walkthrough in `docs/`
+- Improve Jira or Linear adapter mapping
+- Add an enterprise rule-pack example
+
+Browse [good first issues](https://github.com/Schoaib/agent-ready/issues?q=is%3Aopen+label%3A%22good+first+issue%22) · [open an issue](https://github.com/Schoaib/agent-ready/issues/new/choose) · PRs welcome.
 
 ## License
 
