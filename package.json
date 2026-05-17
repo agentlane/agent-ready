@@ -48,6 +48,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/agent-ready"
-  }
+    "url": "https://github.com/Schoaib/agent-ready"
+  },
+  "bugs": {
+    "url": "https://github.com/Schoaib/agent-ready/issues"
+  },
+  "homepage": "https://github.com/Schoaib/agent-ready#readme"
 }

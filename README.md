@@ -109,7 +109,7 @@ jobs:
     permissions: { issues: write }
     steps:
       - uses: actions/checkout@v4
-      - uses: your-org/agent-ready@v0
+      - uses: Schoaib/agent-ready@v0
         with:
           rules: .agent-ready/rules.yaml   # optional
           comment-on-issue: true
