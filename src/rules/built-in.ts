@@ -29,6 +29,18 @@ function bodyLower(t: Ticket): string {
   return (t.body || "").toLowerCase();
 }
 
+/** Escape regex metacharacters so user-supplied strings match literally. */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Strip fenced and inline code blocks to avoid false-positive matches inside examples. */
+function stripCodeBlocks(body: string): string {
+  return body
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`[^`\n]+`/g, "");
+}
+
 function labelsLower(t: Ticket): string[] {
   return (t.labels || []).map((l) => l.toLowerCase());
 }
@@ -39,7 +51,7 @@ const hasAcceptanceCriteria: Rule = {
   run(ticket, cfg) {
     const sev = severityOf(cfg, this.defaultSeverity);
     const min = cfg.min_count ?? 1;
-    const body = ticket.body || "";
+    const body = stripCodeBlocks(ticket.body || "");
     const matches = body.match(/^\s*[-*]\s*\[[ x]\]\s+.+$/gm) || [];
     const numbered = body.match(/^\s*\d+\.\s+.+$/gm) || [];
     const givenWhenThen = body.match(/given\s+.+\bwhen\b/gi) || [];
@@ -115,7 +127,7 @@ const noAmbiguousVerbs: Rule = {
     const extras = (cfg.extra_terms || []).map((s) => s.toLowerCase());
     const all = [...AMBIGUOUS_VERBS, ...extras];
     const haystack = `${ticket.title} ${ticket.body}`.toLowerCase();
-    const hits = all.filter((v) => new RegExp(`\\b${v}\\b`, "i").test(haystack));
+    const hits = all.filter((v) => new RegExp(`\\b${escapeRegex(v)}\\b`, "i").test(haystack));
     return hits.length === 0
       ? pass(this.id, sev, "No ambiguous verbs")
       : fail(this.id, sev, `Ambiguous verb(s): ${hits.join(", ")}`, "Prefer concrete verbs like 'add', 'fix', 'remove', 'replace'.");
@@ -270,12 +282,17 @@ const linksResolve: Rule = {
       try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
-        const resp = await fetch(url, {
-          method: "HEAD",
+        const reqOpts = (method: string): RequestInit => ({
+          method,
           signal: controller.signal,
           redirect: "follow",
           headers: { "User-Agent": "agent-ready-link-checker/1.0" },
         });
+        let resp = await fetch(url, reqOpts("HEAD"));
+        // Some servers (S3, CDNs) reject HEAD with 405/501 — fall back to GET
+        if (resp.status === 405 || resp.status === 501) {
+          resp = await fetch(url, reqOpts("GET"));
+        }
         clearTimeout(timer);
         if (!resp.ok) broken.push(url);
       } catch {

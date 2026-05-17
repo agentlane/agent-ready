@@ -25,7 +25,7 @@ export function renderSarif(out: LintOutput): string {
     id: c.id,
     name: toPascalCase(c.id),
     shortDescription: { text: c.message },
-    helpUri: `https://github.com/agentlane/agent-ready#what-it-checks-10-built-in-rules`,
+    helpUri: `https://github.com/agentlane/agent-ready#what-it-checks-12-built-in-rules`,
     properties: { severity: c.severity },
   }));
 

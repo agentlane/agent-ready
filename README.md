@@ -320,14 +320,14 @@ Gatepack can store the JSON result under `pre_flight.agent_ready`. The fields in
 
 ## Status
 
-**Current release: 0.0.3.** Schemas, CLI, file and GitHub adapters, 12 built-in rules, regex custom rules, JSON/markdown/text/SARIF renderers, GitHub Action with label setter (Docker-based), and a CI workflow that runs build + tests on every PR. All verified end-to-end.
+**Current release: 0.0.4.** Schemas, CLI, file and GitHub adapters, 12 built-in rules, regex custom rules, JSON/markdown/text/SARIF renderers, GitHub Action with label setter (Docker-based), and a CI workflow that runs build + tests on every PR. All verified end-to-end.
 
 ## Releases
 
 GitHub Action users should pin either:
 
 ```yaml
-- uses: agentlane/agent-ready@v0.0.3  # exact release
+- uses: agentlane/agent-ready@v0.0.4  # exact release
 - uses: agentlane/agent-ready@v0      # floating major tag — always latest stable
 ```
 

@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { parse as parseYaml } from "yaml";
 import type { RulePack } from "./types.js";
+import { VERSION } from "./version.js";
 import { lintTicket } from "./lint.js";
 import { loadTicketFromFile } from "./adapters/file.js";
 import { loadTicketFromGitHub } from "./adapters/github.js";
@@ -87,7 +88,7 @@ async function main(): Promise<number> {
   const args = parseArgs(process.argv.slice(2));
 
   if (args.command === "version") {
-    console.log("0.0.1");
+    console.log(VERSION);
     return 0;
   }
   if (args.command === "help" || !args.target) {

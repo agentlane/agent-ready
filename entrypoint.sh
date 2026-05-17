@@ -38,15 +38,29 @@ fi
 REPO="${GITHUB_REPOSITORY:?}"
 API="https://api.github.com/repos/${REPO}/issues/${ISSUE_NUMBER}"
 
-# Fetch issue
+# Fetch issue — capture body and HTTP status in one call
 if [ -n "$TOKEN" ]; then
-  ISSUE_JSON=$(curl -sSL -H "Authorization: token ${TOKEN}" -H "Accept: application/vnd.github+json" "$API")
+  ISSUE_RESP=$(curl -sSL -w "\n%{http_code}" \
+    -H "Authorization: token ${TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    "$API")
 else
-  ISSUE_JSON=$(curl -sSL -H "Accept: application/vnd.github+json" "$API")
+  ISSUE_RESP=$(curl -sSL -w "\n%{http_code}" \
+    -H "Accept: application/vnd.github+json" \
+    "$API")
+fi
+HTTP_CODE=$(printf "%s" "$ISSUE_RESP" | tail -n1)
+ISSUE_JSON=$(printf "%s" "$ISSUE_RESP" | sed '$d')
+
+if [ "$HTTP_CODE" != "200" ]; then
+  MSG=$(echo "$ISSUE_JSON" | jq -r '.message // "unknown error"')
+  echo "agent-ready: GitHub API returned HTTP $HTTP_CODE: $MSG"
+  exit 2
 fi
 
 # Normalize into agent-ready Ticket shape
 TICKET_FILE=$(mktemp)
+trap 'rm -f "$TICKET_FILE"' EXIT
 echo "$ISSUE_JSON" | jq '{id: ("#" + (.number|tostring)), title: .title, body: (.body // ""), labels: ([.labels[].name]), url: .html_url}' > "$TICKET_FILE"
 
 # Pick rule pack

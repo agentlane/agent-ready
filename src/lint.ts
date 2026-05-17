@@ -8,8 +8,8 @@ import type {
   Ticket
 } from "./types.js";
 import { BUILTIN_RULES, runCustomRegex } from "./rules/built-in.js";
+import { VERSION } from "./version.js";
 
-const VERSION = "0.0.1";
 const UI_LABELS = new Set(["ui", "ux", "frontend", "design"]);
 
 function ticketLabels(ticket: Ticket): string[] {
@@ -96,14 +96,14 @@ export async function lintTicket(
   for (const rule of BUILTIN_RULES) {
     const cfg = ruleConfigs[rule.id] ?? { enabled: rule.defaultEnabled ?? true };
     if (cfg.enabled === false) continue;
-    pending.push(Promise.resolve(rule.run(ticket, cfg)));
+    pending.push(Promise.resolve().then(() => rule.run(ticket, cfg)));
   }
 
   for (const [id, cfg] of Object.entries(ruleConfigs)) {
     if (builtinIds.has(id)) continue;
     if (cfg.enabled === false) continue;
     if (cfg.type === "regex") {
-      pending.push(Promise.resolve(runCustomRegex(ticket, id, cfg)));
+      pending.push(Promise.resolve().then(() => runCustomRegex(ticket, id, cfg)));
     }
   }
 

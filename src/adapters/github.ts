@@ -72,12 +72,30 @@ export async function loadTicketFromGitHub(target: string): Promise<Ticket> {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`, { headers });
-  const issue = (await res.json()) as GitHubIssue;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  let res: Response;
+  try {
+    res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`, {
+      headers,
+      signal: controller.signal
+    });
+  } catch (err: unknown) {
+    throw new Error(`GitHub API request failed: ${err instanceof Error ? err.message : String(err)}`);
+  } finally {
+    clearTimeout(timer);
+  }
+
   if (!res.ok) {
-    const detail = issue.message ? `: ${issue.message}` : "";
+    let detail = "";
+    try {
+      const body = (await res.json()) as { message?: string };
+      if (body.message) detail = `: ${body.message}`;
+    } catch { /* ignore parse errors on error responses */ }
     throw new Error(`GitHub issue fetch failed (${res.status})${detail}`);
   }
+
+  const issue = (await res.json()) as GitHubIssue;
   if (!issue.title) {
     throw new Error(`GitHub issue ${owner}/${repo}#${issueNumber} has no title`);
   }
