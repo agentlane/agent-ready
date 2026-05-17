@@ -54,7 +54,7 @@ It's the **front door** of the agentic SDLC: prove the ticket is ready before an
 | No repo target → wrong codebase modified | `repo:` field enforced as a blocker |
 | Subjective PR review ("this doesn't match the ticket") | Objective AC checklist baked into the ticket |
 
-## What it checks (10 built-in rules)
+## What it checks (12 built-in rules)
 
 | Rule | What it looks for |
 |---|---|
@@ -68,6 +68,8 @@ It's the **front door** of the agentic SDLC: prove the ticket is ready before an
 | `body-min-length` | Body is at least 100 characters (configurable) |
 | `no-tribal-knowledge` | Flags phrases like "as discussed", "you know what I mean", "the usual way" |
 | `t-shirt-size-present` | `size:` in the body or a `size:S|M|L|XL` label |
+| `restricted-paths-declared` | Auth/payment/identity/IAM/infra signals without a `risk:high` label |
+| `links-resolve` | URLs in the body return HTTP 200 — **opt-in** (`enabled: false` by default for offline CI) |
 
 Plus user-defined custom rules of `type: regex` (see [Rule pack format](#rule-pack-format)).
 
@@ -109,6 +111,7 @@ agent-ready check ./ticket.json --rules ./my-rules.yaml
 agent-ready check ./ticket.json --format text       # default
 agent-ready check ./ticket.json --format markdown   # PR comment
 agent-ready check ./ticket.json --format json       # machine-readable
+agent-ready check ./ticket.json --format sarif      # GitHub code-scanning
 ```
 
 Exit codes: `0` ready · `1` not ready · `2` usage error.

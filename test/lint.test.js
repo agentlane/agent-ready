@@ -14,6 +14,8 @@ const opts = { adapter: "file", rulePackName: "default" };
 
 // Empty pack → all built-ins run at their defaults
 const emptyPack = { version: 1, rules: {} };
+// Pack for good-ticket tests: disable opt-in network rules
+const offlinePack = { version: 1, rules: { "links-resolve": { enabled: false } } };
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 
@@ -51,24 +53,24 @@ const goodTicket = {
     "",
     "Design: https://figma.com/file/abc/Checkout",
   ].join("\n"),
-  labels: ["risk:low", "size:m", "repo:acme-checkout", "frontend"],
+  labels: ["risk:high", "size:m", "repo:acme-checkout", "frontend"],
 };
 
 // ─── bad ticket ────────────────────────────────────────────────────────────
 
 describe("lintTicket — bad ticket", () => {
-  it("returns ready: false", () => {
-    const out = lintTicket(badTicket, emptyPack, opts);
+  it("returns ready: false", async () => {
+    const out = await lintTicket(badTicket, emptyPack, opts);
     assert.equal(out.ready, false);
   });
 
-  it("has at least 1 error-level failure", () => {
-    const out = lintTicket(badTicket, emptyPack, opts);
+  it("has at least 1 error-level failure", async () => {
+    const out = await lintTicket(badTicket, emptyPack, opts);
     assert.ok(out.summary.failed >= 1);
   });
 
-  it("contains the expected schema fields", () => {
-    const out = lintTicket(badTicket, emptyPack, opts);
+  it("contains the expected schema fields", async () => {
+    const out = await lintTicket(badTicket, emptyPack, opts);
     assert.equal(out.schema_version, "1.0");
     assert.equal(out.ticket_id, "PROJ-1234");
     assert.equal(out.adapter, "file");
@@ -76,22 +78,22 @@ describe("lintTicket — bad ticket", () => {
     assert.ok(Array.isArray(out.checks));
   });
 
-  it("flags no-tribal-knowledge for 'as discussed' + 'you know what i mean'", () => {
-    const out = lintTicket(badTicket, emptyPack, opts);
+  it("flags no-tribal-knowledge for 'as discussed' + 'you know what i mean'", async () => {
+    const out = await lintTicket(badTicket, emptyPack, opts);
     const tribal = out.checks.find((c) => c.id === "no-tribal-knowledge");
     assert.ok(tribal, "tribal-knowledge check missing");
     assert.equal(tribal.status, "fail");
   });
 
-  it("flags no-ambiguous-verbs for 'improve'", () => {
-    const out = lintTicket(badTicket, emptyPack, opts);
+  it("flags no-ambiguous-verbs for 'improve'", async () => {
+    const out = await lintTicket(badTicket, emptyPack, opts);
     const ambig = out.checks.find((c) => c.id === "no-ambiguous-verbs");
     assert.ok(ambig);
     assert.equal(ambig.status, "fail");
   });
 
-  it("flags has-risk-classification (no label)", () => {
-    const out = lintTicket(badTicket, emptyPack, opts);
+  it("flags has-risk-classification (no label)", async () => {
+    const out = await lintTicket(badTicket, emptyPack, opts);
     const risk = out.checks.find((c) => c.id === "has-risk-classification");
     assert.ok(risk);
     assert.equal(risk.status, "fail");
@@ -101,18 +103,18 @@ describe("lintTicket — bad ticket", () => {
 // ─── good ticket ───────────────────────────────────────────────────────────
 
 describe("lintTicket — good ticket", () => {
-  it("returns ready: true", () => {
-    const out = lintTicket(goodTicket, emptyPack, opts);
+  it("returns ready: true", async () => {
+    const out = await lintTicket(goodTicket, offlinePack, opts);
     assert.equal(out.ready, true);
   });
 
-  it("has 0 error-level failures", () => {
-    const out = lintTicket(goodTicket, emptyPack, opts);
+  it("has 0 error-level failures", async () => {
+    const out = await lintTicket(goodTicket, offlinePack, opts);
     assert.equal(out.summary.failed, 0);
   });
 
-  it("passes all 10 built-in rules (or skips non-applicable)", () => {
-    const out = lintTicket(goodTicket, emptyPack, opts);
+  it("passes all 10 built-in rules (or skips non-applicable)", async () => {
+    const out = await lintTicket(goodTicket, offlinePack, opts);
     for (const c of out.checks) {
       assert.ok(
         c.status === "pass" || c.status === "skip",
@@ -125,28 +127,28 @@ describe("lintTicket — good ticket", () => {
 // ─── rule pack overrides ────────────────────────────────────────────────────
 
 describe("lintTicket — rule pack overrides", () => {
-  it("skips a rule when enabled: false", () => {
+  it("skips a rule when enabled: false", async () => {
     const pack = {
       version: 1,
       rules: { "has-risk-classification": { enabled: false } },
     };
-    const out = lintTicket(badTicket, pack, opts);
+    const out = await lintTicket(badTicket, pack, opts);
     const found = out.checks.find((c) => c.id === "has-risk-classification");
     assert.equal(found, undefined, "Rule should be absent when disabled");
   });
 
-  it("changes severity via rule pack", () => {
+  it("changes severity via rule pack", async () => {
     const pack = {
       version: 1,
       rules: { "has-acceptance-criteria": { severity: "warn" } },
     };
-    const out = lintTicket(badTicket, pack, opts);
+    const out = await lintTicket(badTicket, pack, opts);
     const ac = out.checks.find((c) => c.id === "has-acceptance-criteria");
     assert.ok(ac);
     assert.equal(ac.severity, "warn");
   });
 
-  it("ready: true when only warn-level failures remain", () => {
+  it("ready: true when only warn-level failures remain", async () => {
     // Disable all error-severity rules; ticket still has warn failures
     const pack = {
       version: 1,
@@ -157,12 +159,12 @@ describe("lintTicket — rule pack overrides", () => {
         "body-min-length": { enabled: false },
       },
     };
-    const out = lintTicket(badTicket, pack, opts);
+    const out = await lintTicket(badTicket, pack, opts);
     assert.equal(out.ready, true);
     assert.equal(out.summary.failed, 0);
   });
 
-  it("runs custom regex rule", () => {
+  it("runs custom regex rule", async () => {
     const pack = {
       version: 1,
       rules: {
@@ -175,7 +177,7 @@ describe("lintTicket — rule pack overrides", () => {
         },
       },
     };
-    const out = lintTicket(badTicket, pack, opts);
+    const out = await lintTicket(badTicket, pack, opts);
     const custom = out.checks.find((c) => c.id === "custom-epic-link");
     assert.ok(custom, "Custom rule should appear in checks");
     assert.equal(custom.status, "fail");
@@ -186,8 +188,8 @@ describe("lintTicket — rule pack overrides", () => {
 // ─── summary counts ────────────────────────────────────────────────────────
 
 describe("lintTicket — summary arithmetic", () => {
-  it("passed + failed + warnings equals visible checks (excl. skip)", () => {
-    const out = lintTicket(badTicket, emptyPack, opts);
+  it("passed + failed + warnings equals visible checks (excl. skip)", async () => {
+    const out = await lintTicket(badTicket, emptyPack, opts);
     const nonSkip = out.checks.filter((c) => c.status !== "skip").length;
     const total = out.summary.passed + out.summary.failed + out.summary.warnings;
     assert.equal(total, nonSkip);

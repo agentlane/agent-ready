@@ -177,6 +177,94 @@ const hasDesignLink: Rule = {
   }
 };
 
+// ─── restricted-paths-declared ────────────────────────────────────────────
+
+const DEFAULT_RESTRICTED_KEYWORDS = [
+  "auth", "authentication", "authorization", "oauth", "saml", "sso", "jwt",
+  "payment", "checkout", "billing", "stripe", "invoice",
+  "password", "secret", "credential", "private key", "api key",
+  "identity", "iam", "rbac",
+  "terraform", "kubernetes", "k8s", "helm",
+  "migration", "schema migration",
+];
+
+const DEFAULT_RESTRICTED_PATHS = [
+  "src/auth", "src/payment", "src/identity", "src/secrets",
+  "infra/", "terraform/", "k8s/", "kubernetes/",
+  ".env", "secrets/", "credentials/",
+];
+
+const restrictedPathsDeclared: Rule = {
+  id: "restricted-paths-declared",
+  defaultSeverity: "warn",
+  run(ticket, cfg) {
+    const sev = severityOf(cfg, this.defaultSeverity);
+    const haystack = `${ticket.title || ""} ${ticket.body || ""}`.toLowerCase();
+    const keywords = (cfg.keywords ?? DEFAULT_RESTRICTED_KEYWORDS).map((k) => k.toLowerCase());
+    const paths = (cfg.paths ?? DEFAULT_RESTRICTED_PATHS).map((p) => p.toLowerCase());
+    const hits = [...keywords, ...paths].filter((term) => haystack.includes(term));
+    if (hits.length === 0) return pass(this.id, sev, "No restricted-scope signals detected");
+    const hasHighRisk = labelsLower(ticket).includes("risk:high");
+    if (hasHighRisk) {
+      return pass(this.id, sev, `Restricted scope declared with risk:high (signals: ${hits.slice(0, 3).join(", ")})`);
+    }
+    return fail(
+      this.id, sev,
+      `Restricted-scope signals without risk:high: ${hits.slice(0, 3).join(", ")}`,
+      "Add risk:high label or explicitly acknowledge the restricted scope in the ticket."
+    );
+  },
+};
+
+// ─── links-resolve ────────────────────────────────────────────────────────
+
+const URL_REGEX = /https?:\/\/[^\s)>\]"'`]+/g;
+
+const linksResolve: Rule = {
+  id: "links-resolve",
+  defaultSeverity: "warn",
+  async run(ticket, cfg) {
+    const sev = severityOf(cfg, this.defaultSeverity);
+    const timeoutMs = cfg.timeout_ms ?? 5000;
+    const skipDomains = (cfg.skip_domains ?? []).map((d: string) => d.toLowerCase());
+    const urls = [...new Set((ticket.body || "").match(URL_REGEX) ?? [])];
+    if (urls.length === 0) return pass(this.id, sev, "No URLs to check");
+
+    const toCheck = urls.filter((url) => {
+      try {
+        const host = new URL(url).hostname.toLowerCase();
+        return !skipDomains.some((d) => host.includes(d));
+      } catch { return false; }
+    });
+    if (toCheck.length === 0) return pass(this.id, sev, "All URLs are in skip list");
+
+    const broken: string[] = [];
+    for (const url of toCheck) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        const resp = await fetch(url, {
+          method: "HEAD",
+          signal: controller.signal,
+          redirect: "follow",
+          headers: { "User-Agent": "agent-ready-link-checker/1.0" },
+        });
+        clearTimeout(timer);
+        if (!resp.ok) broken.push(url);
+      } catch {
+        broken.push(url);
+      }
+    }
+
+    if (broken.length === 0) return pass(this.id, sev, `All ${toCheck.length} URL(s) resolved`);
+    return fail(
+      this.id, sev,
+      `Unresolvable URL(s): ${broken.join(", ")}`,
+      "Fix or remove links that time out or return errors."
+    );
+  },
+};
+
 export const BUILTIN_RULES: Rule[] = [
   hasAcceptanceCriteria,
   hasDefinitionOfDone,
@@ -187,7 +275,9 @@ export const BUILTIN_RULES: Rule[] = [
   bodyMinLength,
   noTribalKnowledge,
   tShirtSizePresent,
-  hasDesignLink
+  hasDesignLink,
+  restrictedPathsDeclared,
+  linksResolve,
 ];
 
 export function runCustomRegex(ticket: Ticket, id: string, cfg: RuleConfig): CheckResult {

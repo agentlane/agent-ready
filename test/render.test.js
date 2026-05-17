@@ -6,6 +6,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderText, renderMarkdown } from "../dist/render/markdown.js";
+import { renderSarif } from "../dist/render/sarif.js";
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 
@@ -183,5 +184,81 @@ describe("renderText / renderMarkdown — edge cases", () => {
     const out = { ...baseOut, ready: true, summary: { passed: 7, failed: 0, warnings: 1 } };
     const md = renderMarkdown(out);
     assert.ok(md.includes("1 warning(s)"));
+  });
+});
+
+// ─── renderSarif ───────────────────────────────────────────────────────────
+
+describe("renderSarif — structure", () => {
+  it("produces valid JSON", () => {
+    assert.doesNotThrow(() => JSON.parse(renderSarif(failOut)));
+  });
+
+  it("has SARIF 2.1.0 schema and version", () => {
+    const sarif = JSON.parse(renderSarif(failOut));
+    assert.ok(sarif.$schema.includes("sarif-schema-2.1.0"));
+    assert.equal(sarif.version, "2.1.0");
+  });
+
+  it("has exactly one run", () => {
+    const sarif = JSON.parse(renderSarif(failOut));
+    assert.equal(sarif.runs.length, 1);
+  });
+
+  it("driver name is agent-ready", () => {
+    const sarif = JSON.parse(renderSarif(failOut));
+    assert.equal(sarif.runs[0].tool.driver.name, "agent-ready");
+  });
+
+  it("driver.rules lists all checks (including passes)", () => {
+    const sarif = JSON.parse(renderSarif(failOut));
+    const ruleIds = sarif.runs[0].tool.driver.rules.map((r) => r.id);
+    // failOut has 6 checks — all should appear in driver.rules
+    assert.equal(ruleIds.length, failOut.checks.length);
+  });
+
+  it("results only contains failed checks (not passes or skips)", () => {
+    const sarif = JSON.parse(renderSarif(failOut));
+    const results = sarif.runs[0].results;
+    // failOut has 3 fails, 1 skip, 1 pass → 3 results
+    const failedIds = failOut.checks.filter((c) => c.status === "fail").map((c) => c.id);
+    assert.equal(results.length, failedIds.length);
+    for (const r of results) {
+      assert.ok(failedIds.includes(r.ruleId), `Unexpected ruleId in results: ${r.ruleId}`);
+    }
+  });
+
+  it("maps error severity to SARIF level 'error'", () => {
+    const sarif = JSON.parse(renderSarif(failOut));
+    const acResult = sarif.runs[0].results.find((r) => r.ruleId === "has-acceptance-criteria");
+    assert.ok(acResult, "has-acceptance-criteria should be in results");
+    assert.equal(acResult.level, "error");
+  });
+
+  it("maps warn severity to SARIF level 'warning'", () => {
+    const sarif = JSON.parse(renderSarif(failOut));
+    const dodResult = sarif.runs[0].results.find((r) => r.ruleId === "has-definition-of-done");
+    assert.ok(dodResult);
+    assert.equal(dodResult.level, "warning");
+  });
+
+  it("includes ticket id in logicalLocations", () => {
+    const sarif = JSON.parse(renderSarif(failOut));
+    for (const result of sarif.runs[0].results) {
+      const loc = result.locations[0].logicalLocations[0];
+      assert.equal(loc.name, failOut.ticket_id);
+    }
+  });
+
+  it("appends hint to message when present", () => {
+    const sarif = JSON.parse(renderSarif(failOut));
+    const acResult = sarif.runs[0].results.find((r) => r.ruleId === "has-acceptance-criteria");
+    assert.ok(acResult.message.text.includes("Add a checklist."), "Hint should appear in message");
+  });
+
+  it("produces valid JSON for a ready (passing) ticket too", () => {
+    const sarif = JSON.parse(renderSarif(baseOut));
+    assert.equal(sarif.runs[0].results.length, 0);
+    assert.equal(sarif.runs[0].tool.driver.rules.length, baseOut.checks.length);
   });
 });

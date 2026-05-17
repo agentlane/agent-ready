@@ -8,6 +8,7 @@ import { lintTicket } from "./lint.js";
 import { loadTicketFromFile } from "./adapters/file.js";
 import { loadTicketFromGitHub } from "./adapters/github.js";
 import { renderMarkdown, renderText } from "./render/markdown.js";
+import { renderSarif } from "./render/sarif.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -17,7 +18,7 @@ interface Args {
   target?: string;
   adapter: "file" | "github" | "jira" | "linear";
   rules?: string;
-  format: "text" | "markdown" | "json";
+  format: "text" | "markdown" | "json" | "sarif";
 }
 
 function parseArgs(argv: string[]): Args {
@@ -56,7 +57,7 @@ function usage(): string {
   return `agent-ready — Make every ticket ready for AI coding agents.
 
 Usage:
-  agent-ready check <ticket-or-file> [--adapter file|github|jira|linear] [--rules <path>] [--format text|markdown|json]
+  agent-ready check <ticket-or-file> [--adapter file|github|jira|linear] [--rules <path>] [--format text|markdown|json|sarif]
   agent-ready --version
   agent-ready --help
 
@@ -88,10 +89,11 @@ async function main(): Promise<number> {
     ? await loadTicketFromGitHub(args.target)
     : await loadTicketFromFile(args.target);
   const { pack, name } = await loadRulePack(args.rules);
-  const out = lintTicket(ticket, pack, { adapter: args.adapter, rulePackName: name });
+  const out = await lintTicket(ticket, pack, { adapter: args.adapter, rulePackName: name });
 
   if (args.format === "json") console.log(JSON.stringify(out, null, 2));
   else if (args.format === "markdown") console.log(renderMarkdown(out));
+  else if (args.format === "sarif") console.log(renderSarif(out));
   else console.log(renderText(out));
 
   return out.ready ? 0 : 1;

@@ -3,28 +3,31 @@ import { BUILTIN_RULES, runCustomRegex } from "./rules/built-in.js";
 
 const VERSION = "0.0.1";
 
-export function lintTicket(
+export async function lintTicket(
   ticket: Ticket,
   pack: RulePack,
   opts: { adapter: string; rulePackName: string }
-): LintOutput {
-  const checks: CheckResult[] = [];
+): Promise<LintOutput> {
   const ruleConfigs = pack.rules || {};
   const builtinIds = new Set(BUILTIN_RULES.map((r) => r.id));
+
+  const pending: Promise<CheckResult>[] = [];
 
   for (const rule of BUILTIN_RULES) {
     const cfg = ruleConfigs[rule.id] ?? { enabled: true };
     if (cfg.enabled === false) continue;
-    checks.push(rule.run(ticket, cfg));
+    pending.push(Promise.resolve(rule.run(ticket, cfg)));
   }
 
   for (const [id, cfg] of Object.entries(ruleConfigs)) {
     if (builtinIds.has(id)) continue;
     if (cfg.enabled === false) continue;
     if (cfg.type === "regex") {
-      checks.push(runCustomRegex(ticket, id, cfg));
+      pending.push(Promise.resolve(runCustomRegex(ticket, id, cfg)));
     }
   }
+
+  const checks = await Promise.all(pending);
 
   const failed = checks.filter((c) => c.status === "fail" && c.severity === "error").length;
   const warnings = checks.filter((c) => c.status === "fail" && c.severity === "warn").length;

@@ -48,3 +48,15 @@ rules:
     enabled: true
     severity: warn
     labels: [ui, ux, frontend]
+
+  restricted-paths-declared:
+    enabled: true
+    severity: warn
+    # keywords: []   # extend the default restricted keyword list
+    # paths: []      # extend the default restricted path list
+
+  links-resolve:
+    enabled: false   # opt-in — disable for offline/air-gapped CI
+    severity: warn
+    # timeout_ms: 5000
+    # skip_domains: [localhost, example.com]

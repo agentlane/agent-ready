@@ -7,6 +7,13 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { BUILTIN_RULES, runCustomRegex } from "../dist/rules/built-in.js";
 
+// Helper — find a specific rule including new ones
+const ruleById = (id) => {
+  const r = BUILTIN_RULES.find((r) => r.id === id);
+  if (!r) throw new Error(`Rule not found: ${id}`);
+  return r;
+};
+
 // Helper to find a rule by id
 const rule = (id) => {
   const r = BUILTIN_RULES.find((r) => r.id === id);
@@ -412,5 +419,80 @@ describe("runCustomRegex", () => {
       message: "Must link an epic",
     });
     assert.equal(result.message, "Must link an epic");
+  });
+});
+
+// ─── restricted-paths-declared ─────────────────────────────────────────────
+
+describe("restricted-paths-declared", () => {
+  const r = ruleById("restricted-paths-declared");
+
+  it("passes when no restricted signals present", () => {
+    const t = ticket({ title: "Add dark mode toggle", body: "Update the UI theme switcher component." });
+    assert.equal(r.run(t, cfg()).status, "pass");
+  });
+
+  it("fails when body contains 'auth' without risk:high", () => {
+    const t = ticket({ title: "Update auth flow", body: "Refactor the authentication module.", labels: ["risk:low"] });
+    const result = r.run(t, cfg());
+    assert.equal(result.status, "fail");
+    assert.match(result.message, /auth/i);
+  });
+
+  it("fails when body mentions 'terraform' without risk:high", () => {
+    const t = ticket({ body: "Update terraform modules for the prod cluster.", labels: ["risk:medium"] });
+    assert.equal(r.run(t, cfg()).status, "fail");
+  });
+
+  it("passes when risk:high label is present", () => {
+    const t = ticket({ title: "Rotate IAM credentials", body: "Update IAM keys.", labels: ["risk:high"] });
+    assert.equal(r.run(t, cfg()).status, "pass");
+  });
+
+  it("respects custom keywords list", () => {
+    const t = ticket({ body: "Update the billing module.", labels: [] });
+    // "billing" is in default list → should fail
+    assert.equal(r.run(t, cfg()).status, "fail");
+  });
+
+  it("respects custom paths list override", () => {
+    const t = ticket({ body: "Edit src/payments/handler.ts", labels: [] });
+    const result = r.run(t, cfg({ paths: ["src/payments"] }));
+    assert.equal(result.status, "fail");
+  });
+});
+
+// ─── links-resolve ─────────────────────────────────────────────────────────
+
+describe("links-resolve", () => {
+  const r = ruleById("links-resolve");
+
+  it("passes when no URLs present", async () => {
+    const t = ticket({ body: "No links here, just plain text description." });
+    const result = await r.run(t, cfg());
+    assert.equal(result.status, "pass");
+    assert.match(result.message, /No URLs/i);
+  });
+
+  it("passes when all URLs are in skip_domains", async () => {
+    const t = ticket({ body: "See https://example.com/docs and https://localhost/test for details." });
+    const result = await r.run(t, cfg({ skip_domains: ["example.com", "localhost"] }));
+    assert.equal(result.status, "pass");
+    assert.match(result.message, /skip list/i);
+  });
+
+  it("fails for an unreachable URL (bad port)", async () => {
+    const t = ticket({ body: "See http://localhost:19999/should-not-exist for context." });
+    const result = await r.run(t, cfg({ timeout_ms: 1000 }));
+    assert.equal(result.status, "fail");
+    assert.match(result.message, /localhost/i);
+  });
+
+  it("deduplicates repeated URLs", async () => {
+    const t = ticket({ body: "http://localhost:19999/x and http://localhost:19999/x again" });
+    const result = await r.run(t, cfg({ timeout_ms: 500 }));
+    // Should only report one broken URL (deduped)
+    assert.ok(!result.message.includes("localhost:19999/x, http://localhost:19999/x"),
+      "URL should not appear twice in message");
   });
 });

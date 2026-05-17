@@ -14,6 +14,12 @@ export interface RuleConfig {
   min_count?: number;
   extra_terms?: string[];
   labels?: string[];
+  // links-resolve
+  timeout_ms?: number;
+  skip_domains?: string[];
+  // restricted-paths-declared
+  keywords?: string[];
+  paths?: string[];
   // custom-regex fields
   type?: "regex";
   pattern?: string;
@@ -52,5 +58,5 @@ export interface LintOutput {
 export interface Rule {
   id: string;
   defaultSeverity: Severity;
-  run(ticket: Ticket, config: RuleConfig): CheckResult;
+  run(ticket: Ticket, config: RuleConfig): CheckResult | Promise<CheckResult>;
 }
