@@ -5,7 +5,7 @@ Thanks for considering a contribution. The fastest way to be useful is to add a 
 ## Quick start
 
 ```bash
-git clone https://github.com/Schoaib/agent-ready
+git clone https://github.com/agentlane/agent-ready
 cd agent-ready
 npm install
 npm run build

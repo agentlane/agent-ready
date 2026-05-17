@@ -31,7 +31,7 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v6
-      - uses: Schoaib/agent-ready@v0
+      - uses: agentlane/agent-ready@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           comment-on-issue: true
@@ -160,7 +160,7 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v6
-      - uses: Schoaib/agent-ready@v0
+      - uses: agentlane/agent-ready@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           comment-on-issue: true

@@ -2,10 +2,10 @@
 
 > A Definition-of-Ready linter for AI coding agents.
 
-[![CI](https://github.com/Schoaib/agent-ready/actions/workflows/ci.yml/badge.svg)](https://github.com/Schoaib/agent-ready/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@syedshoaib/agent-ready)](https://www.npmjs.com/package/@syedshoaib/agent-ready)
-[![GitHub release](https://img.shields.io/github/v/release/Schoaib/agent-ready)](https://github.com/Schoaib/agent-ready/releases)
-[![License](https://img.shields.io/github/license/Schoaib/agent-ready)](LICENSE)
+[![CI](https://github.com/agentlane/agent-ready/actions/workflows/ci.yml/badge.svg)](https://github.com/agentlane/agent-ready/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@agentlane/agent-ready)](https://www.npmjs.com/package/@agentlane/agent-ready)
+[![GitHub release](https://img.shields.io/github/v/release/agentlane/agent-ready)](https://github.com/agentlane/agent-ready/releases)
+[![License](https://img.shields.io/github/license/agentlane/agent-ready)](LICENSE)
 
 Before Copilot, Cursor, Claude Code, Codex, or any other coding agent starts work,
 `agent-ready` checks whether the issue has enough context to produce a safe, correct PR.
@@ -15,7 +15,7 @@ Before Copilot, Cursor, Claude Code, Codex, or any other coding agent starts wor
 ![agent-ready demo](docs/demo.gif)
 
 ```bash
-$ npx @syedshoaib/agent-ready check examples/tickets/bad-ticket.json
+$ npx @agentlane/agent-ready check examples/tickets/bad-ticket.json
 
 ✗ PROJ-1234  not ready  (4 blocker(s), 6 warning(s))
 
@@ -32,7 +32,7 @@ $ npx @syedshoaib/agent-ready check examples/tickets/bad-ticket.json
 ```
 
 ```bash
-$ npx @syedshoaib/agent-ready check examples/tickets/good-ticket.json
+$ npx @agentlane/agent-ready check examples/tickets/good-ticket.json
 
 ✓ PROJ-2042  ready  (10 checks passed)
 ```
@@ -40,7 +40,7 @@ $ npx @syedshoaib/agent-ready check examples/tickets/good-ticket.json
 ## Try it in 30 seconds
 
 ```bash
-npx @syedshoaib/agent-ready check https://github.com/Schoaib/agent-ready/issues/1 --adapter github
+npx @agentlane/agent-ready check https://github.com/agentlane/agent-ready/issues/1 --adapter github
 ```
 
 No install needed. Uses your existing `gh auth token` or set `GITHUB_TOKEN`.
@@ -105,19 +105,19 @@ Plus user-defined custom rules of `type: regex` (see [Rule pack format](#rule-pa
 
 Every rule can be enabled, disabled, or tuned in a YAML rule pack.
 
-> **Coming next:** see the [open issues](https://github.com/Schoaib/agent-ready/issues) for planned rules and features.
+> **Coming next:** see the [open issues](https://github.com/agentlane/agent-ready/issues) for planned rules and features.
 
 ## Install
 
 ```bash
 # One-off use with a local ticket file
-npx @syedshoaib/agent-ready check <path-to-ticket-json>
+npx @agentlane/agent-ready check <path-to-ticket-json>
 
 # Or fetch a real GitHub Issue
-npx @syedshoaib/agent-ready check owner/repo#123 --adapter github
+npx @agentlane/agent-ready check owner/repo#123 --adapter github
 
 # Or install globally
-npm i -g @syedshoaib/agent-ready
+npm i -g @agentlane/agent-ready
 agent-ready check ./ticket.json
 ```
 
@@ -131,8 +131,8 @@ agent-ready check examples/tickets/bad-ticket.json
 agent-ready check examples/tickets/good-ticket.json
 
 # Lint a GitHub Issue
-agent-ready check Schoaib/agent-ready#1 --adapter github
-agent-ready check https://github.com/Schoaib/agent-ready/issues/1 --adapter github
+agent-ready check agentlane/agent-ready#1 --adapter github
+agent-ready check https://github.com/agentlane/agent-ready/issues/1 --adapter github
 
 # Use a custom rule pack
 agent-ready check ./ticket.json --rules ./my-rules.yaml
@@ -166,7 +166,7 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v6
-      - uses: Schoaib/agent-ready@v0
+      - uses: agentlane/agent-ready@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           rules: .agent-ready/rules.yaml   # optional
@@ -258,16 +258,16 @@ JSON Schemas are published in [`schema/`](schema/) — both the rule pack format
 GitHub Action users should pin either:
 
 ```yaml
-- uses: Schoaib/agent-ready@v0.0.3  # exact release
-- uses: Schoaib/agent-ready@v0      # floating major tag — always latest stable
+- uses: agentlane/agent-ready@v0.0.3  # exact release
+- uses: agentlane/agent-ready@v0      # floating major tag — always latest stable
 ```
 
 ### Roadmap
 
-Track all planned work in [GitHub Issues](https://github.com/Schoaib/agent-ready/issues). Highlights:
+Track all planned work in [GitHub Issues](https://github.com/agentlane/agent-ready/issues). Highlights:
 
-- Native CLI adapters for Jira and Linear ([#1](https://github.com/Schoaib/agent-ready/issues/1))
-- LLM judge for `no-ambiguous-verbs` — opt-in ([#17](https://github.com/Schoaib/agent-ready/issues/17))
+- Native CLI adapters for Jira and Linear ([#1](https://github.com/agentlane/agent-ready/issues/1))
+- LLM judge for `no-ambiguous-verbs` — opt-in ([#17](https://github.com/agentlane/agent-ready/issues/17))
 - VS Code extension: lint as you type
 - Node plugin loader for custom rules (beyond regex)
 
@@ -282,7 +282,7 @@ Rules are the easiest contribution path — one rule = one entry in `src/rules/b
 - Improve Jira or Linear adapter mapping
 - Add an enterprise rule-pack example
 
-Browse [good first issues](https://github.com/Schoaib/agent-ready/issues?q=is%3Aopen+label%3A%22good+first+issue%22) · [open an issue](https://github.com/Schoaib/agent-ready/issues/new/choose) · PRs welcome.
+Browse [good first issues](https://github.com/agentlane/agent-ready/issues?q=is%3Aopen+label%3A%22good+first+issue%22) · [open an issue](https://github.com/agentlane/agent-ready/issues/new/choose) · PRs welcome.
 
 ## License
 
