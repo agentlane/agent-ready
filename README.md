@@ -175,14 +175,14 @@ JSON Schemas are published in [`schema/`](schema/) — both the rule pack format
 
 ## Status
 
-**v0.0.2.** Schemas, CLI, file and GitHub adapters, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
+**v0.0.3.** Schemas, CLI, file and GitHub adapters, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
 
 ## Releases
 
 GitHub Action users should pin either:
 
 ```yaml
-- uses: Schoaib/agent-ready@v0.0.2  # exact release
+- uses: Schoaib/agent-ready@v0.0.3  # exact release
 - uses: Schoaib/agent-ready@v0      # latest v0 release
 ```
 
