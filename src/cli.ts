@@ -2,6 +2,8 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { parse as parseYaml } from "yaml";
 import type { RulePack } from "./types.js";
 import { lintTicket } from "./lint.js";
@@ -45,12 +47,24 @@ function parseArgs(argv: string[]): Args {
   return args;
 }
 
-async function loadRulePack(path?: string): Promise<{ pack: RulePack; name: string }> {
+async function loadRulePack(path?: string): Promise<{ pack: RulePack; name: string; version: string; hash: string }> {
   const defaultPath = resolve(__dirname, "..", "rule-packs", "default.yaml");
   const file = path ?? defaultPath;
   const raw = await readFile(file, "utf8");
   const pack = parseYaml(raw) as RulePack;
-  return { pack, name: path ? file : "default" };
+  const hash = createHash("sha256").update(raw).digest("hex");
+  return { pack, name: path ? file : "default", version: String(pack.version), hash };
+}
+
+function gitValue(args: string[]): string | undefined {
+  try {
+    return execFileSync("git", args, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    }).trim();
+  } catch {
+    return undefined;
+  }
 }
 
 function usage(): string {
@@ -88,8 +102,18 @@ async function main(): Promise<number> {
   const ticket = args.adapter === "github"
     ? await loadTicketFromGitHub(args.target)
     : await loadTicketFromFile(args.target);
-  const { pack, name } = await loadRulePack(args.rules);
-  const out = await lintTicket(ticket, pack, { adapter: args.adapter, rulePackName: name });
+  const { pack, name, version, hash } = await loadRulePack(args.rules);
+  const out = await lintTicket(ticket, pack, {
+    adapter: args.adapter,
+    rulePackName: name,
+    rulePackVersion: version,
+    rulePackHash: hash,
+    source: {
+      path: args.adapter === "file" ? resolve(args.target) : undefined,
+      commit_sha: args.adapter === "file" ? gitValue(["rev-parse", "HEAD"]) : undefined,
+      ref: args.adapter === "file" ? gitValue(["rev-parse", "--abbrev-ref", "HEAD"]) : undefined
+    }
+  });
 
   if (args.format === "json") console.log(JSON.stringify(out, null, 2));
   else if (args.format === "markdown") console.log(renderMarkdown(out));
