@@ -95,6 +95,7 @@ Use both together: templates for authoring, `agent-ready` for automated enforcem
 | `has-design-link` | Figma/Ardoq/Miro/Excalidraw link present when the ticket has a `ui`/`ux`/`frontend` label |
 | `has-test-expectations` | "How to verify" / test plan / Playwright / Jest / Pytest mentioned |
 | `no-ambiguous-verbs` | Flags vague verbs (`improve`, `optimize`, `clean up`, `refactor`, `enhance`, …) |
+| `llm-judge-ambiguity` | Optional LLM clarity score with one-sentence explanation — **opt-in** (`enabled: false` by default) |
 | `body-min-length` | Body is at least 100 characters (configurable) |
 | `no-tribal-knowledge` | Flags phrases like "as discussed", "you know what I mean", "the usual way" |
 | `t-shirt-size-present` | `size:` in the body or a `size:S|M|L|XL` label |
@@ -103,7 +104,7 @@ Use both together: templates for authoring, `agent-ready` for automated enforcem
 
 Plus user-defined custom rules of `type: regex` (see [Rule pack format](#rule-pack-format)).
 
-Every rule can be enabled, disabled, or tuned in a YAML rule pack.
+Every rule can be enabled, disabled, or tuned in a YAML rule pack. `llm-judge-ambiguity` uses `fetch` against an OpenAI-compatible, Portkey, Anthropic, or custom endpoint, so no provider SDK is installed with the package.
 
 > **Coming next:** see the [open issues](https://github.com/agentlane/agent-ready/issues) for planned rules and features.
 
@@ -225,6 +226,17 @@ rules:
     enabled: true
     severity: warn
     extra_terms: [tidy, polish, modernize]
+
+  llm-judge-ambiguity:
+    enabled: false
+    severity: warn
+    provider: openai
+    model: gpt-4o-mini
+    threshold: 0.6
+    api_key_env: OPENAI_API_KEY
+    # Optional: annotate checks[].cost_usd when usage is returned
+    # cost_per_1k_input: 0.00015
+    # cost_per_1k_output: 0.0006
 
   custom-mentions-jira-epic:
     type: regex

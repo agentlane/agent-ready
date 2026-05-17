@@ -226,6 +226,69 @@ describe("no-ambiguous-verbs", () => {
   });
 });
 
+// ─── llm-judge-ambiguity ──────────────────────────────────────────────────
+
+describe("llm-judge-ambiguity", () => {
+  const r = rule("llm-judge-ambiguity");
+  const originalFetch = globalThis.fetch;
+
+  it("is disabled by default for built-in execution", () => {
+    assert.equal(r.defaultEnabled, false);
+  });
+
+  it("passes when the LLM clarity score meets the threshold and annotates cost", async () => {
+    process.env.AGENT_READY_TEST_LLM_KEY = "test-key";
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      choices: [{ message: { content: "{\"score\":0.82,\"explanation\":\"The ticket is concrete and testable.\"}" } }],
+      usage: { prompt_tokens: 1000, completion_tokens: 500 }
+    }), { status: 200 });
+
+    const result = await r.run(ticket({ title: "Add retry logic", body: "Acceptance criteria: retry twice and test it." }), cfg({
+      enabled: true,
+      api_key_env: "AGENT_READY_TEST_LLM_KEY",
+      threshold: 0.6,
+      cost_per_1k_input: 0.01,
+      cost_per_1k_output: 0.02,
+    }));
+
+    assert.equal(result.status, "pass");
+    assert.match(result.message, /0\.82/);
+    assert.equal(result.cost_usd, 0.02);
+    globalThis.fetch = originalFetch;
+    delete process.env.AGENT_READY_TEST_LLM_KEY;
+  });
+
+  it("fails when the LLM clarity score is below threshold", async () => {
+    process.env.AGENT_READY_TEST_LLM_KEY = "test-key";
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      choices: [{ message: { content: "{\"score\":0.41,\"explanation\":\"The requested outcome is too broad.\"}" } }],
+      usage: { prompt_tokens: 10, completion_tokens: 10 }
+    }), { status: 200 });
+
+    const result = await r.run(ticket({ title: "Streamline the experience", body: "Rethink the flow." }), cfg({
+      enabled: true,
+      api_key_env: "AGENT_READY_TEST_LLM_KEY",
+      threshold: 0.6,
+    }));
+
+    assert.equal(result.status, "fail");
+    assert.match(result.message, /too broad/);
+    globalThis.fetch = originalFetch;
+    delete process.env.AGENT_READY_TEST_LLM_KEY;
+  });
+
+  it("fails clearly when enabled without provider credentials", async () => {
+    delete process.env.AGENT_READY_MISSING_LLM_KEY;
+    const result = await r.run(ticket(), cfg({
+      enabled: true,
+      api_key_env: "AGENT_READY_MISSING_LLM_KEY",
+    }));
+
+    assert.equal(result.status, "fail");
+    assert.match(result.message, /Missing AGENT_READY_MISSING_LLM_KEY/);
+  });
+});
+
 // ─── body-min-length ───────────────────────────────────────────────────────
 
 describe("body-min-length", () => {
