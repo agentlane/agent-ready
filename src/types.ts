@@ -94,6 +94,20 @@ export interface LintSource {
   ref?: string;
 }
 
+export interface LintSignals {
+  path_recommendation: AgentPath;
+  context_tier: ContextTier;
+  risk_classification: RiskClassification;
+}
+
+export interface LintSource {
+  adapter: string;
+  url?: string;
+  path?: string;
+  commit_sha?: string;
+  ref?: string;
+}
+
 export interface LintOutput {
   schema_version: "1.1";
   agent_ready_version: string;
