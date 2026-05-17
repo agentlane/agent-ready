@@ -60,27 +60,34 @@ Plus user-defined custom rules of `type: regex` (see [Rule pack format](#rule-pa
 
 Every rule can be enabled, disabled, or tuned in a YAML rule pack.
 
-> **Planned for v0.1 (not yet implemented):** `links-resolve`, `restricted-paths-declared`, plus `path_recommendation` / `context_tier` / `risk_classification` output fields, GitHub/Jira/Linear adapters, SARIF output, an `agent-ready` label setter, and a Node plugin loader for custom rules.
+> **Planned for v0.1 (not yet implemented):** `links-resolve`, `restricted-paths-declared`, plus `path_recommendation` / `context_tier` / `risk_classification` output fields, Jira/Linear adapters, SARIF output, an `agent-ready` label setter, and a Node plugin loader for custom rules.
 
 ## Install
 
 ```bash
-# One-off use
+# One-off use with a local ticket file
 npx agent-ready check <path-to-ticket-json>
+
+# Or fetch a real GitHub Issue
+npx agent-ready check owner/repo#123 --adapter github
 
 # Or install globally
 npm i -g agent-ready
 agent-ready check ./ticket.json
 ```
 
-> v0 supports reading tickets from a local JSON file only. The GitHub Action below normalizes a real GitHub Issue into that shape via `jq` so the workflow works end-to-end today. Native GitHub/Jira/Linear CLI adapters are planned for v0.1.
+> The CLI supports local JSON tickets and GitHub Issues. GitHub auth uses `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token`. Native Jira/Linear CLI adapters are planned for v0.1.
 
-## Usage (v0)
+## Usage
 
 ```bash
 # Lint a ticket from a local JSON file
 agent-ready check examples/tickets/bad-ticket.json
 agent-ready check examples/tickets/good-ticket.json
+
+# Lint a GitHub Issue
+agent-ready check Schoaib/agent-ready#1 --adapter github
+agent-ready check https://github.com/Schoaib/agent-ready/issues/1 --adapter github
 
 # Use a custom rule pack
 agent-ready check ./ticket.json --rules ./my-rules.yaml
@@ -165,12 +172,12 @@ JSON Schemas are published in [`schema/`](schema/) — both the rule pack format
 
 ## Status
 
-**v0.0.1.** Schemas, CLI, file adapter, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
+**v0.0.1.** Schemas, CLI, file and GitHub adapters, 10 built-in rules, regex custom rules, JSON/markdown/text renderers, GitHub Action (Docker-based), and a CI workflow that runs the bad/good demo on every PR. All verified end-to-end.
 
 ### Roadmap
 
 **v0.1 — honest the rest of the way**
-- Native CLI adapters for GitHub, Jira, Linear (today the GitHub Action does the normalization)
+- Native CLI adapters for Jira and Linear
 - `links-resolve` rule
 - `restricted-paths-declared` rule (links to OPA's `restricted-paths.rego`)
 - `path_recommendation` (A/B/C), `context_tier` (T1/T2/T3), and `risk_classification` as first-class output fields — driven by a rule pack

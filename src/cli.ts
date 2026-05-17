@@ -6,6 +6,7 @@ import { parse as parseYaml } from "yaml";
 import type { RulePack } from "./types.js";
 import { lintTicket } from "./lint.js";
 import { loadTicketFromFile } from "./adapters/file.js";
+import { loadTicketFromGitHub } from "./adapters/github.js";
 import { renderMarkdown, renderText } from "./render/markdown.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -62,7 +63,8 @@ Usage:
 Examples:
   agent-ready check examples/tickets/bad-ticket.json
   agent-ready check examples/tickets/good-ticket.json --format markdown
-  agent-ready check PROJ-1234 --adapter jira --rules ./.agent-ready/rules.yaml
+  agent-ready check owner/repo#123 --adapter github
+  agent-ready check https://github.com/owner/repo/issues/123 --adapter github
 `;
 }
 
@@ -77,12 +79,14 @@ async function main(): Promise<number> {
     console.log(usage());
     return 0;
   }
-  if (args.adapter !== "file") {
-    console.error(`Adapter '${args.adapter}' is not implemented in v0. Use --adapter file.`);
+  if (args.adapter === "jira" || args.adapter === "linear") {
+    console.error(`Adapter '${args.adapter}' is not implemented yet. Use --adapter file or --adapter github.`);
     return 2;
   }
 
-  const ticket = await loadTicketFromFile(args.target);
+  const ticket = args.adapter === "github"
+    ? await loadTicketFromGitHub(args.target)
+    : await loadTicketFromFile(args.target);
   const { pack, name } = await loadRulePack(args.rules);
   const out = lintTicket(ticket, pack, { adapter: args.adapter, rulePackName: name });
 
