@@ -122,7 +122,7 @@ npm i -g @agentlane/agent-ready
 agent-ready check ./ticket.json
 ```
 
-> The CLI supports local JSON tickets and GitHub Issues. GitHub auth uses `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token`. Native Jira/Linear CLI adapters are planned.
+> The CLI supports local JSON tickets, GitHub Issues, and Jira Cloud. Linear adapter is planned ([#1](https://github.com/agentlane/agent-ready/issues/1)).
 
 ## Usage
 
@@ -135,6 +135,10 @@ agent-ready check examples/tickets/good-ticket.json
 agent-ready check agentlane/agent-ready#1 --adapter github
 agent-ready check https://github.com/agentlane/agent-ready/issues/1 --adapter github
 
+# Lint a Jira Cloud ticket
+agent-ready check PROJ-123 --adapter jira
+agent-ready check https://acme.atlassian.net/browse/PROJ-123 --adapter jira
+
 # Use a custom rule pack
 agent-ready check ./ticket.json --rules ./my-rules.yaml
 
@@ -146,6 +150,25 @@ agent-ready check ./ticket.json --format sarif      # GitHub code-scanning
 ```
 
 Exit codes: `0` ready · `1` not ready · `2` usage error.
+
+### Auth
+
+**GitHub** — uses `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token` automatically. No setup needed if `gh` CLI is authenticated.
+
+**Jira Cloud** — requires three env vars:
+
+| Variable | Description |
+|----------|-------------|
+| `JIRA_BASE_URL` | Your Jira instance root, e.g. `https://acme.atlassian.net` (only needed for shorthand `PROJ-123`; inferred from URL form) |
+| `JIRA_EMAIL` | The email address on your Atlassian account |
+| `JIRA_API_TOKEN` | An API token from [id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens) |
+
+```bash
+export JIRA_BASE_URL=https://acme.atlassian.net
+export JIRA_EMAIL=you@example.com
+export JIRA_API_TOKEN=your-api-token
+agent-ready check PROJ-123 --adapter jira
+```
 
 ## GitHub Action
 

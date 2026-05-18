@@ -10,6 +10,7 @@ import { VERSION } from "./version.js";
 import { lintTicket } from "./lint.js";
 import { loadTicketFromFile } from "./adapters/file.js";
 import { loadTicketFromGitHub } from "./adapters/github.js";
+import { loadTicketFromJira } from "./adapters/jira.js";
 import { renderMarkdown, renderText } from "./render/markdown.js";
 import { renderSarif } from "./render/sarif.js";
 
@@ -81,6 +82,8 @@ Examples:
   agent-ready check examples/tickets/good-ticket.json --format markdown
   agent-ready check owner/repo#123 --adapter github
   agent-ready check https://github.com/owner/repo/issues/123 --adapter github
+  agent-ready check PROJ-123 --adapter jira
+  agent-ready check https://acme.atlassian.net/browse/PROJ-123 --adapter jira
 `;
 }
 
@@ -95,14 +98,15 @@ async function main(): Promise<number> {
     console.log(usage());
     return 0;
   }
-  if (args.adapter === "jira" || args.adapter === "linear") {
-    console.error(`Adapter '${args.adapter}' is not implemented yet. Use --adapter file or --adapter github. Track progress at https://github.com/agentlane/agent-ready/issues/1`);
+  if (args.adapter === "linear") {
+    console.error(`Adapter 'linear' is not implemented yet. Use --adapter file, --adapter github, or --adapter jira. Track progress at https://github.com/agentlane/agent-ready/issues/1`);
     return 2;
   }
 
-  const ticket = args.adapter === "github"
-    ? await loadTicketFromGitHub(args.target)
-    : await loadTicketFromFile(args.target);
+  const ticket =
+    args.adapter === "github" ? await loadTicketFromGitHub(args.target) :
+    args.adapter === "jira"   ? await loadTicketFromJira(args.target)   :
+    await loadTicketFromFile(args.target);
   const { pack, name, version, hash } = await loadRulePack(args.rules);
   const out = await lintTicket(ticket, pack, {
     adapter: args.adapter,
