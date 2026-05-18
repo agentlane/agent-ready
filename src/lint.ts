@@ -1,9 +1,11 @@
 import type {
   AgentPath,
+  BuiltinRuleConfig,
   CheckResult,
   ContextTier,
   LintOutput,
   LintSignals,
+  RegexRuleConfig,
   RulePack,
   Ticket
 } from "./types.js";
@@ -94,7 +96,8 @@ export async function lintTicket(
   const pending: Promise<CheckResult>[] = [];
 
   for (const rule of BUILTIN_RULES) {
-    const cfg = ruleConfigs[rule.id] ?? { enabled: rule.defaultEnabled ?? true };
+    // Built-in rule configs never have type: "regex" — cast is safe
+    const cfg = (ruleConfigs[rule.id] ?? { enabled: rule.defaultEnabled ?? true }) as BuiltinRuleConfig;
     if (cfg.enabled === false) continue;
     pending.push(Promise.resolve().then(() => rule.run(ticket, cfg)));
   }
@@ -103,7 +106,8 @@ export async function lintTicket(
     if (builtinIds.has(id)) continue;
     if (cfg.enabled === false) continue;
     if (cfg.type === "regex") {
-      pending.push(Promise.resolve().then(() => runCustomRegex(ticket, id, cfg)));
+      // TypeScript narrows cfg to RegexRuleConfig here via the discriminant
+      pending.push(Promise.resolve().then(() => runCustomRegex(ticket, id, cfg as RegexRuleConfig)));
     }
   }
 

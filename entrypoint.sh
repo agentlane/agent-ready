@@ -69,13 +69,16 @@ if [ -n "$RULES" ] && [ -f "$GITHUB_WORKSPACE/$RULES" ]; then
   RULES_FLAG="--rules $GITHUB_WORKSPACE/$RULES"
 fi
 
-# Run lint, capture both markdown + json
-MD_OUT=$(node /app/dist/cli.js check "$TICKET_FILE" --format markdown $RULES_FLAG || true)
-JSON_OUT=$(node /app/dist/cli.js check "$TICKET_FILE" --format json $RULES_FLAG || true)
+# Run lint once — --format all emits a JSON envelope with both json + markdown fields.
+# This avoids running rules (especially links-resolve) twice.
+ALL_OUT=$(node /app/dist/cli.js check "$TICKET_FILE" --format all $RULES_FLAG || true)
 
-READY=$(echo "$JSON_OUT" | jq -r '.ready')
-FAILED=$(echo "$JSON_OUT" | jq -r '.summary.failed')
-WARNINGS=$(echo "$JSON_OUT" | jq -r '.summary.warnings')
+JSON_OUT=$(printf "%s" "$ALL_OUT" | jq -c '.json')
+MD_OUT=$(printf "%s" "$ALL_OUT" | jq -r '.markdown')
+
+READY=$(printf "%s" "$ALL_OUT" | jq -r '.json.ready')
+FAILED=$(printf "%s" "$ALL_OUT" | jq -r '.json.summary.failed')
+WARNINGS=$(printf "%s" "$ALL_OUT" | jq -r '.json.summary.warnings')
 
 # Emit outputs
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
@@ -115,13 +118,19 @@ if [ "$SET_LABEL" = "true" ]; then
     ISSUE_LABELS_API="https://api.github.com/repos/${REPO}/issues/${ISSUE_NUMBER}/labels"
     REPO_LABELS_API="https://api.github.com/repos/${REPO}/labels"
     if [ "$READY" = "true" ]; then
-      # Ensure the label exists in the repo (create if absent, ignore 422 if already there)
-      curl -sSL -X POST \
+      # Only create repo label if it doesn't already exist (avoids unnecessary API noise)
+      LABEL_HTTP=$(curl -sSL -o /dev/null -w "%{http_code}" \
         -H "Authorization: token ${TOKEN}" \
         -H "Accept: application/vnd.github+json" \
-        "$REPO_LABELS_API" \
-        -d '{"name":"agent-ready","color":"0E8A16","description":"Ticket passed all agent-ready checks"}' \
-        > /dev/null 2>&1 || true
+        "$REPO_LABELS_API/agent-ready")
+      if [ "$LABEL_HTTP" = "404" ]; then
+        curl -sSL -X POST \
+          -H "Authorization: token ${TOKEN}" \
+          -H "Accept: application/vnd.github+json" \
+          "$REPO_LABELS_API" \
+          -d '{"name":"agent-ready","color":"0E8A16","description":"Ticket passed all agent-ready checks"}' \
+          > /dev/null
+      fi
       # Add label to issue
       curl -sSL -X POST \
         -H "Authorization: token ${TOKEN}" \

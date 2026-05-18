@@ -1,4 +1,4 @@
-import type { Rule, Ticket, RuleConfig, CheckResult, Severity } from "../types.js";
+import type { Rule, Ticket, RuleConfig, BuiltinRuleConfig, RegexRuleConfig, CheckResult, Severity } from "../types.js";
 import { judgeAmbiguity } from "../adapters/llm.js";
 
 const AMBIGUOUS_VERBS = [
@@ -21,7 +21,7 @@ function fail(id: string, severity: Severity, message: string, hint?: string): C
   return { id, severity, status: "fail", message, hint };
 }
 
-function severityOf(cfg: RuleConfig, fallback: Severity): Severity {
+function severityOf(cfg: BuiltinRuleConfig, fallback: Severity): Severity {
   return cfg.severity ?? fallback;
 }
 
@@ -325,8 +325,9 @@ export const BUILTIN_RULES: Rule[] = [
   linksResolve,
 ];
 
-export function runCustomRegex(ticket: Ticket, id: string, cfg: RuleConfig): CheckResult {
+export function runCustomRegex(ticket: Ticket, id: string, cfg: RegexRuleConfig): CheckResult {
   const sev = cfg.severity ?? "error";
+  // Runtime guard: YAML rule packs may omit required fields — fail gracefully
   if (!cfg.pattern || !cfg.field) {
     return fail(id, sev, "Invalid custom rule (missing pattern or field)");
   }

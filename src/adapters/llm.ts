@@ -1,4 +1,4 @@
-import type { RuleConfig, Ticket } from "../types.js";
+import type { BuiltinRuleConfig, Ticket } from "../types.js";
 
 export interface AmbiguityJudgeResult {
   score: number;
@@ -11,11 +11,11 @@ interface LlmUsage {
   outputTokens?: number;
 }
 
-function providerOf(cfg: RuleConfig): NonNullable<RuleConfig["provider"]> {
+function providerOf(cfg: BuiltinRuleConfig): NonNullable<BuiltinRuleConfig["provider"]> {
   return cfg.provider ?? "openai";
 }
 
-function apiKeyEnv(cfg: RuleConfig): string {
+function apiKeyEnv(cfg: BuiltinRuleConfig): string {
   if (cfg.api_key_env) return cfg.api_key_env;
   switch (providerOf(cfg)) {
     case "anthropic": return "ANTHROPIC_API_KEY";
@@ -24,7 +24,7 @@ function apiKeyEnv(cfg: RuleConfig): string {
   }
 }
 
-function baseUrl(cfg: RuleConfig): string {
+function baseUrl(cfg: BuiltinRuleConfig): string {
   if (cfg.base_url) return cfg.base_url.replace(/\/$/, "");
   switch (providerOf(cfg)) {
     case "anthropic": return "https://api.anthropic.com";
@@ -33,7 +33,7 @@ function baseUrl(cfg: RuleConfig): string {
   }
 }
 
-function modelOf(cfg: RuleConfig): string {
+function modelOf(cfg: BuiltinRuleConfig): string {
   if (cfg.model) return cfg.model;
   return providerOf(cfg) === "anthropic" ? "claude-3-5-haiku-latest" : "gpt-4o-mini";
 }
@@ -79,7 +79,7 @@ function explanationOf(value: unknown): string {
   return value.trim().replace(/\s+/g, " ");
 }
 
-function costFromUsage(cfg: RuleConfig, usage: LlmUsage, directCost?: unknown): number | undefined {
+function costFromUsage(cfg: BuiltinRuleConfig, usage: LlmUsage, directCost?: unknown): number | undefined {
   if (typeof directCost === "number" && Number.isFinite(directCost)) return Number(directCost.toFixed(6));
   const inputRate = cfg.cost_per_1k_input;
   const outputRate = cfg.cost_per_1k_output;
@@ -89,7 +89,7 @@ function costFromUsage(cfg: RuleConfig, usage: LlmUsage, directCost?: unknown): 
   return Number((((input / 1000) * inputRate) + ((output / 1000) * outputRate)).toFixed(6));
 }
 
-function openAiPayload(ticket: Ticket, cfg: RuleConfig): object {
+function openAiPayload(ticket: Ticket, cfg: BuiltinRuleConfig): object {
   return {
     model: modelOf(cfg),
     response_format: { type: "json_object" },
@@ -101,7 +101,7 @@ function openAiPayload(ticket: Ticket, cfg: RuleConfig): object {
   };
 }
 
-function anthropicPayload(ticket: Ticket, cfg: RuleConfig): object {
+function anthropicPayload(ticket: Ticket, cfg: BuiltinRuleConfig): object {
   return {
     model: modelOf(cfg),
     max_tokens: 200,
@@ -160,7 +160,7 @@ function readAnthropicResponse(raw: unknown): { content: string; usage: LlmUsage
   };
 }
 
-export async function judgeAmbiguity(ticket: Ticket, cfg: RuleConfig): Promise<AmbiguityJudgeResult> {
+export async function judgeAmbiguity(ticket: Ticket, cfg: BuiltinRuleConfig): Promise<AmbiguityJudgeResult> {
   const provider = providerOf(cfg);
   const key = process.env[apiKeyEnv(cfg)];
   if (!key) {

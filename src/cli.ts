@@ -21,7 +21,7 @@ interface Args {
   target?: string;
   adapter: "file" | "github" | "jira" | "linear";
   rules?: string;
-  format: "text" | "markdown" | "json" | "sarif";
+  format: "text" | "markdown" | "json" | "sarif" | "all";
 }
 
 function parseArgs(argv: string[]): Args {
@@ -72,7 +72,7 @@ function usage(): string {
   return `agent-ready — Make every ticket ready for AI coding agents.
 
 Usage:
-  agent-ready check <ticket-or-file> [--adapter file|github|jira|linear] [--rules <path>] [--format text|markdown|json|sarif]
+  agent-ready check <ticket-or-file> [--adapter file|github|jira|linear] [--rules <path>] [--format text|markdown|json|sarif|all]
   agent-ready --version
   agent-ready --help
 
@@ -96,7 +96,7 @@ async function main(): Promise<number> {
     return 0;
   }
   if (args.adapter === "jira" || args.adapter === "linear") {
-    console.error(`Adapter '${args.adapter}' is not implemented yet. Use --adapter file or --adapter github.`);
+    console.error(`Adapter '${args.adapter}' is not implemented yet. Use --adapter file or --adapter github. Track progress at https://github.com/agentlane/agent-ready/issues/1`);
     return 2;
   }
 
@@ -119,7 +119,10 @@ async function main(): Promise<number> {
   if (args.format === "json") console.log(JSON.stringify(out, null, 2));
   else if (args.format === "markdown") console.log(renderMarkdown(out));
   else if (args.format === "sarif") console.log(renderSarif(out));
-  else console.log(renderText(out));
+  else if (args.format === "all") {
+    // Single-pass envelope: json + markdown in one call (avoids double link-check etc.)
+    console.log(JSON.stringify({ json: out, markdown: renderMarkdown(out) }, null, 2));
+  } else console.log(renderText(out));
 
   return out.ready ? 0 : 1;
 }

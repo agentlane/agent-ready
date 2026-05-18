@@ -11,11 +11,16 @@ export interface Ticket {
   url?: string;
 }
 
-export interface RuleConfig {
+/** Options for built-in rules. All fields are optional and rule-specific. */
+export interface BuiltinRuleConfig {
+  type?: never; // discriminant — built-in rules have no `type` field
   enabled?: boolean;
   severity?: Severity;
+  // has-acceptance-criteria, body-min-length
   min_count?: number;
+  // no-ambiguous-verbs
   extra_terms?: string[];
+  // has-design-link
   labels?: string[];
   // llm-judge-ambiguity
   provider?: "openai" | "anthropic" | "portkey" | "custom";
@@ -31,14 +36,22 @@ export interface RuleConfig {
   // restricted-paths-declared
   keywords?: string[];
   paths?: string[];
-  // custom-regex fields
-  type?: "regex";
-  pattern?: string;
+}
+
+/** Options for user-defined regex rules (type: "regex" in rule pack). */
+export interface RegexRuleConfig {
+  type: "regex";
+  enabled?: boolean;
+  severity?: Severity;
+  pattern: string;
+  field: "title" | "body" | "labels" | "any";
   flags?: string;
-  field?: "title" | "body" | "labels" | "any";
   must_match?: boolean;
   message?: string;
 }
+
+/** Discriminated union: built-in rule config vs. custom regex rule config. */
+export type RuleConfig = BuiltinRuleConfig | RegexRuleConfig;
 
 export interface SignalsConfig {
   risk_classification?: {
@@ -94,20 +107,6 @@ export interface LintSource {
   ref?: string;
 }
 
-export interface LintSignals {
-  path_recommendation: AgentPath;
-  context_tier: ContextTier;
-  risk_classification: RiskClassification;
-}
-
-export interface LintSource {
-  adapter: string;
-  url?: string;
-  path?: string;
-  commit_sha?: string;
-  ref?: string;
-}
-
 export interface LintOutput {
   schema_version: "1.1";
   agent_ready_version: string;
@@ -130,5 +129,5 @@ export interface Rule {
   id: string;
   defaultSeverity: Severity;
   defaultEnabled?: boolean;
-  run(ticket: Ticket, config: RuleConfig): CheckResult | Promise<CheckResult>;
+  run(ticket: Ticket, config: BuiltinRuleConfig): CheckResult | Promise<CheckResult>;
 }
