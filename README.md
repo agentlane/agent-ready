@@ -122,7 +122,7 @@ npm i -g @agentlane/agent-ready
 agent-ready check ./ticket.json
 ```
 
-> The CLI supports local JSON tickets, GitHub Issues, and Jira Cloud. Linear adapter is planned ([#1](https://github.com/agentlane/agent-ready/issues/1)).
+> The CLI supports local JSON tickets, GitHub Issues, Jira Cloud, and Linear.
 
 ## Usage
 
@@ -138,6 +138,10 @@ agent-ready check https://github.com/agentlane/agent-ready/issues/1 --adapter gi
 # Lint a Jira Cloud ticket
 agent-ready check PROJ-123 --adapter jira
 agent-ready check https://acme.atlassian.net/browse/PROJ-123 --adapter jira
+
+# Lint a Linear issue
+agent-ready check TEAM-123 --adapter linear
+agent-ready check https://linear.app/acme/issue/TEAM-123 --adapter linear
 
 # Use a custom rule pack
 agent-ready check ./ticket.json --rules ./my-rules.yaml
@@ -168,6 +172,17 @@ export JIRA_BASE_URL=https://acme.atlassian.net
 export JIRA_EMAIL=you@example.com
 export JIRA_API_TOKEN=your-api-token
 agent-ready check PROJ-123 --adapter jira
+```
+
+**Linear** — requires one env var:
+
+| Variable | Description |
+|----------|-------------|
+| `LINEAR_API_KEY` | A personal API key from [linear.app/settings/api](https://linear.app/settings/api) |
+
+```bash
+export LINEAR_API_KEY=lin_api_...
+agent-ready check TEAM-123 --adapter linear
 ```
 
 ## GitHub Action
@@ -358,7 +373,7 @@ GitHub Action users should pin either:
 
 Track all planned work in [GitHub Issues](https://github.com/agentlane/agent-ready/issues). Highlights:
 
-- Native CLI adapters for Jira and Linear ([#1](https://github.com/agentlane/agent-ready/issues/1))
+- Expand Jira and Linear adapter coverage (ADF rendering, custom fields)
 - LLM judge for `no-ambiguous-verbs` — opt-in ([#17](https://github.com/agentlane/agent-ready/issues/17))
 - VS Code extension: lint as you type
 - Node plugin loader for custom rules (beyond regex)
@@ -371,7 +386,7 @@ Rules are the easiest contribution path — one rule = one entry in `src/rules/b
 - Add a new readiness rule
 - Add a bad/good ticket example pair
 - Write a use-case walkthrough in `docs/`
-- Improve Jira or Linear adapter mapping
+- Improve Jira or Linear adapter coverage (e.g. ADF rendering, custom fields, sprints)
 - Add an enterprise rule-pack example
 
 Browse [good first issues](https://github.com/agentlane/agent-ready/issues?q=is%3Aopen+label%3A%22good+first+issue%22) · [open an issue](https://github.com/agentlane/agent-ready/issues/new/choose) · PRs welcome.
