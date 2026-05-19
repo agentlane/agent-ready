@@ -34,6 +34,7 @@ export type {
   RuleConfig,
   BuiltinRuleConfig,
   RegexRuleConfig,
+  OpaRuleConfig,
   SignalsConfig,
   OutputConfig,
   SinkConfig,

@@ -5,11 +5,13 @@ import type {
   ContextTier,
   LintOutput,
   LintSignals,
+  OpaRuleConfig,
   RegexRuleConfig,
   RulePack,
   Ticket
 } from "./types.js";
 import { BUILTIN_RULES, runCustomRegex } from "./rules/built-in.js";
+import { runOpaRule } from "./rules/opa.js";
 import { VERSION } from "./version.js";
 
 const UI_LABELS = new Set(["ui", "ux", "frontend", "design"]);
@@ -93,29 +95,47 @@ export async function lintTicket(
   const ruleConfigs = pack.rules || {};
   const builtinIds = new Set(BUILTIN_RULES.map((r) => r.id));
 
-  const pending: Promise<CheckResult>[] = [];
+  // ── Phase 1: built-in + custom-regex rules (parallel) ──────────────────────
+  const phase1: Promise<CheckResult>[] = [];
 
   for (const rule of BUILTIN_RULES) {
     // Built-in rule configs never have type: "regex" — cast is safe
     const cfg = (ruleConfigs[rule.id] ?? { enabled: rule.defaultEnabled ?? true }) as BuiltinRuleConfig;
     if (cfg.enabled === false) continue;
-    pending.push(Promise.resolve().then(() => rule.run(ticket, cfg)));
+    phase1.push(Promise.resolve().then(() => rule.run(ticket, cfg)));
   }
 
   for (const [id, cfg] of Object.entries(ruleConfigs)) {
     if (builtinIds.has(id)) continue;
     if (cfg.enabled === false) continue;
     if (cfg.type === "regex") {
-      // TypeScript narrows cfg to RegexRuleConfig here via the discriminant
-      pending.push(Promise.resolve().then(() => runCustomRegex(ticket, id, cfg as RegexRuleConfig)));
+      phase1.push(Promise.resolve().then(() => runCustomRegex(ticket, id, cfg as RegexRuleConfig)));
     }
   }
 
-  const checks = await Promise.all(pending);
+  const phase1Checks = await Promise.all(phase1);
+
+  // Derive intermediate signals from phase 1 results — used as OPA input so
+  // policies can reason about path/tier/risk without a chicken-and-egg problem.
+  const intermediateSignals = deriveSignals(ticket, phase1Checks, pack);
+
+  // ── Phase 2: OPA policy rules (sequential; depend on intermediate signals) ─
+  const phase2: Promise<CheckResult>[] = [];
+
+  for (const [id, cfg] of Object.entries(ruleConfigs)) {
+    if (cfg.enabled === false) continue;
+    if (cfg.type === "opa") {
+      phase2.push(runOpaRule(ticket, intermediateSignals, id, cfg as OpaRuleConfig));
+    }
+  }
+
+  const phase2Checks = await Promise.all(phase2);
+  const checks = [...phase1Checks, ...phase2Checks];
 
   const failed = checks.filter((c) => c.status === "fail" && c.severity === "error").length;
   const warnings = checks.filter((c) => c.status === "fail" && c.severity === "warn").length;
   const passed = checks.filter((c) => c.status === "pass").length;
+  // Final signals account for OPA rule results
   const signals = deriveSignals(ticket, checks, pack);
   const source = cleanSource({
     adapter: opts.adapter,

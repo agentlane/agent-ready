@@ -50,8 +50,37 @@ export interface RegexRuleConfig {
   message?: string;
 }
 
-/** Discriminated union: built-in rule config vs. custom regex rule config. */
-export type RuleConfig = BuiltinRuleConfig | RegexRuleConfig;
+/** Options for user-defined OPA policy rules (type: "opa" in rule pack). */
+export interface OpaRuleConfig {
+  type: "opa";
+  enabled?: boolean;
+  severity?: Severity;
+  /**
+   * Evaluation mode.
+   *  - "remote"   POST to an OPA REST server (default)
+   *  - "embedded" Shell out to `opa eval` CLI (requires opa installed)
+   */
+  mode?: "remote" | "embedded";
+  /** OPA server base URL, e.g. "http://localhost:8181". Remote mode only. */
+  server?: string;
+  /** Path to a .rego policy file. Embedded mode only. */
+  policy?: string;
+  /**
+   * OPA query, e.g. "data.security.allow" or "data.pii.decision".
+   * For remote mode this becomes the URL path: /v1/data/security/allow.
+   * The result must be a boolean or an object with shape
+   * { allow: boolean, reason?: string, hint?: string }.
+   */
+  query: string;
+  /**
+   * Which parts of the lint context to include in OPA input.
+   * Defaults to ["ticket", "signals"].
+   */
+  input_includes?: Array<"ticket" | "signals">;
+}
+
+/** Discriminated union: built-in rule config vs. custom regex vs. OPA policy. */
+export type RuleConfig = BuiltinRuleConfig | RegexRuleConfig | OpaRuleConfig;
 
 export interface SignalsConfig {
   risk_classification?: {

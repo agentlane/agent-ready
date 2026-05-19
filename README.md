@@ -405,6 +405,23 @@ Gatepack can store the JSON result under `pre_flight.agent_ready`. The fields in
 }
 ```
 
+## OPA policy bridge
+
+Delegate rule decisions to [Open Policy Agent](https://www.openpolicyagent.org/) policies. Governance teams write Rego — `agent-ready` evaluates it:
+
+```yaml
+# .agent-ready/rules.yaml
+rules:
+  enforce-pii-risk:
+    type: opa
+    mode: remote             # or: embedded (shells out to `opa eval`)
+    server: http://localhost:8181
+    query: data.pii.decision
+    severity: error
+```
+
+OPA rules run after built-in rules and receive derived `signals` as input, so policies can enforce risk routing based on the full lint context. Three example policies are provided in [`examples/policies/`](examples/policies/) (PII gate, payment routing, infra change gate). See [docs/opa.md](docs/opa.md) for the full rule config reference, input/decision shapes, and server wiring.
+
 ## Telemetry
 
 Emit `LintOutput` to webhook, JSONL, or OpenTelemetry sinks after each run — useful for dashboards and trend analysis. Add an `output` section to your rule pack:
