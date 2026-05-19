@@ -20,7 +20,6 @@ jobs:
   publish:
     name: Publish with provenance
     runs-on: ubuntu-latest
-    environment: npm
     steps:
       - uses: actions/checkout@v6
 
