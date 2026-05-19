@@ -55,15 +55,21 @@ jobs:
       - run: npm pack --dry-run
         if: steps.published.outputs.exists == 'false'
 
-      - name: Configure npm registry for OIDC publishing
+      - name: Debug OIDC + npm config
         if: steps.published.outputs.exists == 'false'
         run: |
-          # Write a clean .npmrc — registry only, no _authToken entry —
-          # so npm sees no static token and falls back to the OIDC exchange
-          # via the trusted publisher configuration on npmjs.com.
+          echo "=== OIDC env vars ==="
+          echo "GITHUB_ACTIONS=${GITHUB_ACTIONS}"
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL=${ACTIONS_ID_TOKEN_REQUEST_URL:-NOT SET}"
+          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN set: $([[ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]] && echo YES || echo NO)"
+          echo "NODE_AUTH_TOKEN set: $([[ -n "$NODE_AUTH_TOKEN" ]] && echo YES || echo NO)"
+          echo "=== npm config (clean npmrc) ==="
           echo "registry=https://registry.npmjs.org/" > /tmp/npm-oidc.npmrc
+          NPM_CONFIG_USERCONFIG=/tmp/npm-oidc.npmrc npm config list
+          echo "=== npm whoami ==="
+          NPM_CONFIG_USERCONFIG=/tmp/npm-oidc.npmrc npm whoami --loglevel=verbose 2>&1 || true
 
-      - run: npm publish --access public --provenance
+      - run: npm publish --access public --provenance --loglevel=verbose
         if: steps.published.outputs.exists == 'false'
         env:
           NPM_CONFIG_USERCONFIG: /tmp/npm-oidc.npmrc
