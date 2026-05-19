@@ -26,3 +26,5 @@ jobs:
           fi
       - name: Lint good-ticket (expect pass)
         run: node dist/cli.js check examples/tickets/good-ticket.json
+      - name: Programmatic SDK smoke test
+        run: node examples/sdk/programmatic.mjs

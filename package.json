@@ -7,8 +7,26 @@
     "agent-ready": "dist/cli.js",
     "story-lint": "dist/cli.js"
   },
-  "main": "dist/lint.js",
-  "types": "dist/lint.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js"
+    },
+    "./render": {
+      "types": "./dist/render/index.d.ts",
+      "import": "./dist/render/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    }
+  },
   "files": [
     "dist",
     "rule-packs",
@@ -21,7 +39,8 @@
     "start": "node dist/cli.js",
     "check:bad": "node dist/cli.js check examples/tickets/bad-ticket.json",
     "check:good": "node dist/cli.js check examples/tickets/good-ticket.json",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "example:sdk": "node examples/sdk/programmatic.mjs"
   },
   "engines": {
     "node": ">=20"
