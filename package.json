@@ -5,6 +5,7 @@
   "type": "module",
   "bin": {
     "agent-ready": "dist/cli.js",
+    "agent-ready-mcp": "dist/mcp/server.js",
     "story-lint": "dist/cli.js"
   },
   "main": "dist/index.js",
@@ -25,6 +26,10 @@
     "./types": {
       "types": "./dist/types.d.ts",
       "import": "./dist/types.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/server.d.ts",
+      "import": "./dist/mcp/server.js"
     }
   },
   "files": [
@@ -59,6 +64,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "yaml": "^2.6.0"
   },
   "devDependencies": {

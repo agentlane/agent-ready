@@ -120,9 +120,38 @@ npx @agentlane/agent-ready check owner/repo#123 --adapter github
 # Or install globally
 npm i -g @agentlane/agent-ready
 agent-ready check ./ticket.json
+
+# Or install as a library for programmatic use
+npm install @agentlane/agent-ready
 ```
 
 > The CLI supports local JSON tickets, GitHub Issues, Jira Cloud, and Linear.
+
+## Programmatic use
+
+Call `lintTicket` directly from Node/TypeScript — no CLI shell-out needed:
+
+```ts
+import { lintTicket, loadTicketFromFile } from "@agentlane/agent-ready";
+import { renderText } from "@agentlane/agent-ready/render";
+import { readFile } from "node:fs/promises";
+import { parse as parseYaml } from "yaml";
+
+const pack = parseYaml(
+  await readFile("node_modules/@agentlane/agent-ready/rule-packs/default.yaml", "utf8")
+);
+
+const ticket = await loadTicketFromFile("./ticket.json");
+const result = await lintTicket(ticket, pack, { adapter: "file", rulePackName: "default" });
+
+console.log(result.ready);     // true | false
+console.log(result.signals);   // { path_recommendation: "A", context_tier: "T1", risk_classification: "low" }
+console.log(renderText(result));
+```
+
+Available sub-path imports: `@agentlane/agent-ready/adapters`, `@agentlane/agent-ready/render`, `@agentlane/agent-ready/types`.
+
+See [docs/sdk.md](docs/sdk.md) for the full API reference.
 
 ## Usage
 
@@ -184,6 +213,26 @@ agent-ready check PROJ-123 --adapter jira
 export LINEAR_API_KEY=lin_api_...
 agent-ready check TEAM-123 --adapter linear
 ```
+
+## MCP server (Claude Desktop / Cursor / custom agents)
+
+`agent-ready` ships an MCP server. Wire it into Claude Desktop or Cursor once — then ask the agent to check any ticket inline, no CLI shell-out needed:
+
+```json
+{
+  "mcpServers": {
+    "agent-ready": {
+      "command": "npx",
+      "args": ["@agentlane/agent-ready", "agent-ready-mcp"],
+      "env": { "GITHUB_TOKEN": "ghp_..." }
+    }
+  }
+}
+```
+
+The tool `agent_ready_check` accepts `target`, `adapter`, `rules`, and `format`. It returns the full `LintOutput` JSON (or text/markdown/sarif if you prefer) so the agent can reason about `ready`, `signals`, and per-rule `checks`.
+
+See [docs/mcp.md](docs/mcp.md) for Claude Desktop config, Cursor config, environment variables, and a custom-agent Node.js example.
 
 ## GitHub Action
 
