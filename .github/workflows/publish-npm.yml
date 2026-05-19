@@ -26,7 +26,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
+          # No registry-url: setup-node@v6 injects GITHUB_TOKEN as NODE_AUTH_TOKEN
+          # which npm rejects (it's not an npm token). Configure the registry
+          # manually instead so OIDC trusted publisher can take over.
 
       - id: package
         name: Read package metadata
@@ -53,11 +55,15 @@ jobs:
       - run: npm pack --dry-run
         if: steps.published.outputs.exists == 'false'
 
-      - name: Debug npm auth config
+      - name: Configure npm registry for OIDC publishing
         if: steps.published.outputs.exists == 'false'
         run: |
-          npm config list
-          npm whoami --loglevel=verbose 2>&1 || true
+          # Write a clean .npmrc — registry only, no _authToken entry —
+          # so npm sees no static token and falls back to the OIDC exchange
+          # via the trusted publisher configuration on npmjs.com.
+          echo "registry=https://registry.npmjs.org/" > /tmp/npm-oidc.npmrc
 
-      - run: npm publish --access public --provenance --loglevel=verbose
+      - run: npm publish --access public --provenance
         if: steps.published.outputs.exists == 'false'
+        env:
+          NPM_CONFIG_USERCONFIG: /tmp/npm-oidc.npmrc
