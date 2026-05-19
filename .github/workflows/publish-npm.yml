@@ -53,5 +53,11 @@ jobs:
       - run: npm pack --dry-run
         if: steps.published.outputs.exists == 'false'
 
-      - run: npm publish --access public --provenance
+      - name: Debug npm auth config
+        if: steps.published.outputs.exists == 'false'
+        run: |
+          npm config list
+          npm whoami --loglevel=verbose 2>&1 || true
+
+      - run: npm publish --access public --provenance --loglevel=verbose
         if: steps.published.outputs.exists == 'false'
