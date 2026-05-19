@@ -159,7 +159,8 @@ describe("runOpaRule — remote mode", () => {
 
 // ── Embedded mode ─────────────────────────────────────────────────────────────
 
-describe("runOpaRule — embedded mode", () => {
+// concurrency: 1 — tests mutate process.env.OPA_BINARY so they must be sequential
+describe("runOpaRule — embedded mode", { concurrency: 1 }, () => {
   let tmpDir;
   let fakeOpaTrue;
   let fakeOpaFalse;
