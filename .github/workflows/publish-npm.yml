@@ -27,7 +27,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
+          # No registry-url — setup-node's .npmrc injection interferes with
+          # npm's OIDC token exchange for trusted publishers. npm defaults to
+          # registry.npmjs.org and will use the GitHub OIDC token automatically
+          # when ACTIONS_ID_TOKEN_REQUEST_URL is present (id-token: write).
 
       - id: package
         name: Read package metadata
@@ -56,7 +59,3 @@ jobs:
 
       - run: npm publish --access public --provenance
         if: steps.published.outputs.exists == 'false'
-        env:
-          # Unset any static token so npm uses the OIDC exchange from the
-          # trusted publisher configuration instead of a stale secret.
-          NODE_AUTH_TOKEN: ""
