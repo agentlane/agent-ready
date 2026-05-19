@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type {
   AgentPath,
   BuiltinRuleConfig,
@@ -144,8 +145,9 @@ export async function lintTicket(
   });
 
   return {
-    schema_version: "1.1",
+    schema_version: "1.2",
     agent_ready_version: VERSION,
+    run_id: randomUUID(),
     ticket_id: ticket.id,
     adapter: opts.adapter,
     rule_pack: opts.rulePackName,

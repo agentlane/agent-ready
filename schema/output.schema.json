@@ -1,13 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://agent-ready.dev/schema/output.v1.1.json",
+  "$id": "https://agent-ready.dev/schema/output.v1.2.json",
   "title": "agent-ready CLI output",
   "description": "Machine-readable result of an agent-ready check. Stable across versions; safe to consume in CI and downstream tools (e.g. Gatepack).",
   "type": "object",
-  "required": ["schema_version", "ticket_id", "ready", "checks", "summary", "source", "signals"],
+  "required": ["schema_version", "run_id", "ticket_id", "ready", "checks", "summary", "source", "signals"],
   "properties": {
-    "schema_version": { "type": "string", "const": "1.1" },
+    "schema_version": { "type": "string", "const": "1.2" },
     "agent_ready_version": { "type": "string" },
+    "run_id": {
+      "type": "string",
+      "description": "UUIDv4 generated per run. Join key for feedback events recorded via `agent-ready feedback record`."
+    },
     "ticket_id": { "type": "string" },
     "adapter": { "type": "string", "enum": ["file", "github", "jira", "linear"] },
     "rule_pack": { "type": "string" },

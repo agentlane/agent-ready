@@ -16,7 +16,7 @@ import { emitLintOutput } from "../dist/telemetry/emit.js";
 
 function makeLintOutput(overrides = {}) {
   return {
-    schema_version: "1.1",
+    schema_version: "1.2",
     agent_ready_version: "0.0.4",
     ticket_id: "PROJ-123",
     adapter: "file",

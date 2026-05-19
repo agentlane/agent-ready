@@ -71,7 +71,8 @@ describe("lintTicket — bad ticket", () => {
 
   it("contains the expected schema fields", async () => {
     const out = await lintTicket(badTicket, emptyPack, opts);
-    assert.equal(out.schema_version, "1.1");
+    assert.equal(out.schema_version, "1.2");
+    assert.ok(typeof out.run_id === "string" && out.run_id.length > 0, "run_id should be a non-empty string");
     assert.equal(out.ticket_id, "PROJ-1234");
     assert.equal(out.adapter, "file");
     assert.equal(out.rule_pack_version, "1");

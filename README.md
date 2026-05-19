@@ -422,6 +422,27 @@ rules:
 
 OPA rules run after built-in rules and receive derived `signals` as input, so policies can enforce risk routing based on the full lint context. Three example policies are provided in [`examples/policies/`](examples/policies/) (PII gate, payment routing, infra change gate). See [docs/opa.md](docs/opa.md) for the full rule config reference, input/decision shapes, and server wiring.
 
+## Feedback loop
+
+Record what happened after the agent ran and surface which rules actually predict success:
+
+```bash
+# Capture the run_id from the check
+RUN_ID=$(agent-ready check PROJ-123 --adapter github --format json | jq -r '.run_id')
+
+# After the agent finishes, record the outcome
+agent-ready feedback record \
+  --ticket-id PROJ-123 \
+  --outcome success \
+  --run-id "$RUN_ID" \
+  --duration-min 22
+
+# Report: per-outcome counts + per-rule predictive value table
+agent-ready feedback report --runs .agent-ready/runs.jsonl
+```
+
+Every `LintOutput` now carries a `run_id` (UUIDv4, schema v1.2) as the join key. Combine the `jsonl` telemetry sink with feedback records to build a per-rule predictive value table — which rules most reliably separate successful agent runs from failed ones. See [docs/feedback.md](docs/feedback.md) for the full command reference and schema.
+
 ## Telemetry
 
 Emit `LintOutput` to webhook, JSONL, or OpenTelemetry sinks after each run — useful for dashboards and trend analysis. Add an `output` section to your rule pack:

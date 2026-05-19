@@ -27,6 +27,10 @@ export { renderSarif } from "./render/sarif.js";
 // Telemetry
 export { emitLintOutput } from "./telemetry/emit.js";
 
+// Feedback loop
+export { recordFeedback } from "./feedback/record.js";
+export { generateReport } from "./feedback/report.js";
+
 // Public types (type-only re-exports for tree-shaking)
 export type {
   Ticket,
@@ -45,6 +49,7 @@ export type {
   LintSignals,
   LintSource,
   CheckResult,
+  FeedbackEvent,
   Rule,
   Severity,
   AgentPath,

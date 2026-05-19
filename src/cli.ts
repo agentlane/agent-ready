@@ -15,35 +15,66 @@ import { loadTicketFromLinear } from "./adapters/linear.js";
 import { renderMarkdown, renderText } from "./render/markdown.js";
 import { renderSarif } from "./render/sarif.js";
 import { emitLintOutput } from "./telemetry/emit.js";
+import { recordFeedback } from "./feedback/record.js";
+import { generateReport } from "./feedback/report.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 interface Args {
-  command: "check" | "help" | "version";
+  command: "check" | "feedback-record" | "feedback-report" | "help" | "version";
   target?: string;
   adapter: "file" | "github" | "jira" | "linear";
   rules?: string;
   format: "text" | "markdown" | "json" | "sarif" | "all";
   noTelemetry: boolean;
+  // feedback record
+  feedbackTicketId?: string;
+  feedbackOutcome?: "success" | "partial" | "failure";
+  feedbackNotes?: string;
+  feedbackDurationMin?: number;
+  feedbackRunId?: string;
+  feedbackLedger: string;
+  // feedback report
+  feedbackRuns?: string;
 }
 
+const DEFAULT_LEDGER = ".agent-ready/feedback.jsonl";
+
 function parseArgs(argv: string[]): Args {
-  const args: Args = { command: "help", adapter: "file", format: "text", noTelemetry: false };
+  const args: Args = {
+    command: "help",
+    adapter: "file",
+    format: "text",
+    noTelemetry: false,
+    feedbackLedger: DEFAULT_LEDGER,
+  };
   const rest: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "--adapter") args.adapter = argv[++i] as Args["adapter"];
-    else if (a === "--rules") args.rules = argv[++i];
-    else if (a === "--format") args.format = argv[++i] as Args["format"];
+    if (a === "--adapter")           args.adapter = argv[++i] as Args["adapter"];
+    else if (a === "--rules")        args.rules = argv[++i];
+    else if (a === "--format")       args.format = argv[++i] as Args["format"];
     else if (a === "--no-telemetry") args.noTelemetry = true;
-    else if (a === "-h" || a === "--help") args.command = "help";
+    else if (a === "--ticket-id")    args.feedbackTicketId = argv[++i];
+    else if (a === "--outcome")      args.feedbackOutcome = argv[++i] as Args["feedbackOutcome"];
+    else if (a === "--notes")        args.feedbackNotes = argv[++i];
+    else if (a === "--duration-min") args.feedbackDurationMin = Number(argv[++i]);
+    else if (a === "--run-id")       args.feedbackRunId = argv[++i];
+    else if (a === "--ledger")       args.feedbackLedger = argv[++i];
+    else if (a === "--runs")         args.feedbackRuns = argv[++i];
+    else if (a === "-h" || a === "--help")    args.command = "help";
     else if (a === "-v" || a === "--version") args.command = "version";
     else rest.push(a);
   }
+
   if (rest[0] === "check" && rest[1]) {
     args.command = "check";
     args.target = rest[1];
+  } else if (rest[0] === "feedback" && rest[1] === "record") {
+    args.command = "feedback-record";
+  } else if (rest[0] === "feedback" && rest[1] === "report") {
+    args.command = "feedback-report";
   } else if (rest[0] === "help") {
     args.command = "help";
   } else if (rest[0]) {
@@ -77,7 +108,9 @@ function usage(): string {
   return `agent-ready — Make every ticket ready for AI coding agents.
 
 Usage:
-  agent-ready check <ticket-or-file> [--adapter file|github|jira|linear] [--rules <path>] [--format text|markdown|json|sarif|all]
+  agent-ready check <ticket-or-file> [--adapter file|github|jira|linear] [--rules <path>] [--format text|markdown|json|sarif|all] [--no-telemetry]
+  agent-ready feedback record --ticket-id <id> --outcome success|partial|failure [--notes <text>] [--duration-min <n>] [--run-id <uuid>] [--ledger <path>]
+  agent-ready feedback report [--ledger <path>] [--runs <lint-jsonl-path>]
   agent-ready --version
   agent-ready --help
 
@@ -85,11 +118,10 @@ Examples:
   agent-ready check examples/tickets/bad-ticket.json
   agent-ready check examples/tickets/good-ticket.json --format markdown
   agent-ready check owner/repo#123 --adapter github
-  agent-ready check https://github.com/owner/repo/issues/123 --adapter github
   agent-ready check PROJ-123 --adapter jira
-  agent-ready check https://acme.atlassian.net/browse/PROJ-123 --adapter jira
   agent-ready check TEAM-123 --adapter linear
-  agent-ready check https://linear.app/acme/issue/TEAM-123 --adapter linear
+  agent-ready feedback record --ticket-id PROJ-123 --outcome success --duration-min 22
+  agent-ready feedback report --runs .agent-ready/runs.jsonl
 `;
 }
 
@@ -100,6 +132,41 @@ async function main(): Promise<number> {
     console.log(VERSION);
     return 0;
   }
+
+  // ── feedback record ──────────────────────────────────────────────────────
+  if (args.command === "feedback-record") {
+    if (!args.feedbackTicketId) {
+      console.error("agent-ready: --ticket-id is required for feedback record");
+      return 2;
+    }
+    if (!args.feedbackOutcome) {
+      console.error("agent-ready: --outcome (success|partial|failure) is required for feedback record");
+      return 2;
+    }
+    const event = await recordFeedback({
+      ticketId: args.feedbackTicketId,
+      outcome: args.feedbackOutcome,
+      notes: args.feedbackNotes,
+      durationMin: args.feedbackDurationMin,
+      runId: args.feedbackRunId,
+      ledger: args.feedbackLedger,
+    });
+    console.log(`✓ Feedback recorded → ${args.feedbackLedger}`);
+    console.log(`  ticket: ${event.ticket_id}  outcome: ${event.outcome}  at: ${event.recorded_at}`);
+    if (event.run_id) console.log(`  run_id: ${event.run_id}`);
+    return 0;
+  }
+
+  // ── feedback report ──────────────────────────────────────────────────────
+  if (args.command === "feedback-report") {
+    const report = await generateReport({
+      ledger: args.feedbackLedger,
+      runs: args.feedbackRuns,
+    });
+    console.log(report);
+    return 0;
+  }
+
   if (args.command === "help" || !args.target) {
     console.log(usage());
     return 0;

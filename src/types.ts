@@ -172,8 +172,10 @@ export interface LintSource {
 }
 
 export interface LintOutput {
-  schema_version: "1.1";
+  schema_version: "1.2";
   agent_ready_version: string;
+  /** UUIDv4 generated per run — join key for feedback events. */
+  run_id: string;
   ticket_id: string;
   adapter: string;
   rule_pack: string;
@@ -187,6 +189,27 @@ export interface LintOutput {
   ready: boolean;
   summary: { passed: number; failed: number; warnings: number };
   checks: CheckResult[];
+}
+
+// ── Feedback loop ─────────────────────────────────────────────────────────────
+
+/** Outcome of a downstream agent run, captured via `agent-ready feedback record`. */
+export interface FeedbackEvent {
+  feedback_schema_version: "1.0";
+  /** The ticket that was checked. */
+  ticket_id: string;
+  /** Optional join key to a past LintOutput.run_id. */
+  run_id?: string;
+  /** How the agent run went. */
+  outcome: "success" | "partial" | "failure";
+  /** Free-text notes from the team. */
+  notes?: string;
+  /** How long the agent ran (minutes). */
+  duration_min?: number;
+  /** ISO timestamp when this feedback was recorded. */
+  recorded_at: string;
+  /** git user.email of the person recording feedback, if available. */
+  recorded_by?: string;
 }
 
 export interface Rule {

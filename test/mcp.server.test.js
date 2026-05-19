@@ -82,9 +82,9 @@ describe("MCP server — bad ticket", () => {
     assert.equal(out.ready, false);
   });
 
-  it("LintOutput has schema_version 1.1", () => {
+  it("LintOutput has schema_version 1.2", () => {
     const out = JSON.parse(result.content[0].text);
-    assert.equal(out.schema_version, "1.1");
+    assert.equal(out.schema_version, "1.2");
   });
 
   it("LintOutput.signals has all three keys", () => {
