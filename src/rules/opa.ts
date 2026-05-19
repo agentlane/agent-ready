@@ -104,13 +104,17 @@ function evalEmbedded(
     throw new Error('OPA rule with mode: "embedded" requires a "policy" field (path to .rego file)');
   }
 
+  // Allow tests (and advanced users) to override the opa binary path
+  const opaCmd = process.env.OPA_BINARY ?? "opa";
+
   const result = spawnSync(
-    "opa",
+    opaCmd,
     ["eval", "--data", cfg.policy, "--stdin-input", "--format", "raw", cfg.query],
     {
       input: JSON.stringify(input),
       encoding: "utf8",
       timeout: 10_000,
+      env: process.env,
     }
   );
 

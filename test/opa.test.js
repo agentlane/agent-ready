@@ -161,36 +161,33 @@ describe("runOpaRule — remote mode", () => {
 
 describe("runOpaRule — embedded mode", () => {
   let tmpDir;
-  const savedPath = process.env.PATH;
+  let fakeOpaTrue;
+  let fakeOpaFalse;
 
   before(async () => {
     tmpDir = await mkdtemp(join(tmpdir(), "opa-fake-"));
 
-    // Write a fake `opa` script that echoes the last CLI arg (the query)
-    // For our tests the query result is embedded in the script:
-    const fakeOpa = join(tmpDir, "opa");
-    // The fake script just prints "true" to stdout
-    await writeFile(
-      fakeOpa,
-      `#!/bin/sh
-# Fake opa script for testing — always returns true
-echo "true"
-`,
-      "utf8"
-    );
-    await chmod(fakeOpa, 0o755);
+    // Write two stable fake binaries — one always returns "true", one "false".
+    // Use the OPA_BINARY env var override (read by evalEmbedded) so we don't
+    // rely on PATH mutation, which is unreliable across CI environments.
+    fakeOpaTrue = join(tmpDir, "opa-true");
+    fakeOpaFalse = join(tmpDir, "opa-false");
 
-    // Prepend tmpDir to PATH so our fake opa is found first
-    process.env.PATH = `${tmpDir}:${savedPath}`;
+    await writeFile(fakeOpaTrue,  "#!/bin/sh\necho 'true'\n",  "utf8");
+    await writeFile(fakeOpaFalse, "#!/bin/sh\necho 'false'\n", "utf8");
+    await chmod(fakeOpaTrue,  0o755);
+    await chmod(fakeOpaFalse, 0o755);
+
+    // Point evalEmbedded at the true-returning binary by default
+    process.env.OPA_BINARY = fakeOpaTrue;
   });
 
   after(async () => {
-    process.env.PATH = savedPath;
+    delete process.env.OPA_BINARY;
     await rm(tmpDir, { recursive: true, force: true });
   });
 
   it("returns pass when opa eval outputs 'true'", async () => {
-    // Create a minimal dummy policy file (content doesn't matter — fake opa ignores it)
     const policyPath = join(tmpDir, "policy.rego");
     await writeFile(policyPath, "package test\nallow := true\n");
 
@@ -205,10 +202,8 @@ echo "true"
   });
 
   it("returns fail when opa eval outputs 'false'", async () => {
-    // Write a fake opa that returns false
-    const falseOpa = join(tmpDir, "opa");
-    await writeFile(falseOpa, "#!/bin/sh\necho 'false'\n", "utf8");
-    await chmod(falseOpa, 0o755);
+    // Temporarily switch to the false-returning binary
+    process.env.OPA_BINARY = fakeOpaFalse;
 
     const policyPath = join(tmpDir, "policy.rego");
     await writeFile(policyPath, "package test\nallow := false\n");
@@ -222,9 +217,8 @@ echo "true"
 
     assert.equal(r.status, "fail");
 
-    // Restore to true-returning fake opa
-    await writeFile(falseOpa, "#!/bin/sh\necho 'true'\n", "utf8");
-    await chmod(falseOpa, 0o755);
+    // Restore to true-returning binary
+    process.env.OPA_BINARY = fakeOpaTrue;
   });
 
   it("returns fail with error message when policy path missing", async () => {
