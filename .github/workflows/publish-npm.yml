@@ -56,3 +56,7 @@ jobs:
 
       - run: npm publish --access public --provenance
         if: steps.published.outputs.exists == 'false'
+        env:
+          # Unset any static token so npm uses the OIDC exchange from the
+          # trusted publisher configuration instead of a stale secret.
+          NODE_AUTH_TOKEN: ""
