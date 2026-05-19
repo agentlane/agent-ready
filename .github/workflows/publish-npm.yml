@@ -55,21 +55,17 @@ jobs:
       - run: npm pack --dry-run
         if: steps.published.outputs.exists == 'false'
 
-      - name: Debug OIDC + npm config
+      - name: Upgrade npm and configure registry for OIDC publishing
         if: steps.published.outputs.exists == 'false'
         run: |
-          echo "=== OIDC env vars ==="
-          echo "GITHUB_ACTIONS=${GITHUB_ACTIONS}"
-          echo "ACTIONS_ID_TOKEN_REQUEST_URL=${ACTIONS_ID_TOKEN_REQUEST_URL:-NOT SET}"
-          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN set: $([[ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]] && echo YES || echo NO)"
-          echo "NODE_AUTH_TOKEN set: $([[ -n "$NODE_AUTH_TOKEN" ]] && echo YES || echo NO)"
-          echo "=== npm config (clean npmrc) ==="
+          # npm 10.9.7 (bundled with Node 22) throws ENEEDAUTH before the OIDC
+          # exchange can run. npm 11 fixed this. Upgrade then write a clean
+          # .npmrc (registry only, no _authToken) so the OIDC exchange fires.
+          npm install -g npm@latest
           echo "registry=https://registry.npmjs.org/" > /tmp/npm-oidc.npmrc
-          NPM_CONFIG_USERCONFIG=/tmp/npm-oidc.npmrc npm config list
-          echo "=== npm whoami ==="
-          NPM_CONFIG_USERCONFIG=/tmp/npm-oidc.npmrc npm whoami --loglevel=verbose 2>&1 || true
+          npm --version
 
-      - run: npm publish --access public --provenance --loglevel=verbose
+      - run: npm publish --access public --provenance
         if: steps.published.outputs.exists == 'false'
         env:
           NPM_CONFIG_USERCONFIG: /tmp/npm-oidc.npmrc
