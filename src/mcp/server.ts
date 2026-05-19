@@ -23,6 +23,7 @@ import {
 
 import type { RulePack } from "../types.js";
 import { lintTicket } from "../lint.js";
+import { emitLintOutput } from "../telemetry/emit.js";
 import { loadTicketFromFile } from "../adapters/file.js";
 import { loadTicketFromGitHub } from "../adapters/github.js";
 import { loadTicketFromJira } from "../adapters/jira.js";
@@ -172,6 +173,12 @@ export function createMcpServer(): Server {
         rulePackVersion: version,
         rulePackHash: hash,
       });
+
+      // Telemetry: emit to configured sinks (fail-soft)
+      const sinks = pack.output?.sinks ?? [];
+      if (sinks.length) {
+        await emitLintOutput(out, sinks);
+      }
 
       // Format output
       let text: string;

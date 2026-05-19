@@ -405,6 +405,24 @@ Gatepack can store the JSON result under `pre_flight.agent_ready`. The fields in
 }
 ```
 
+## Telemetry
+
+Emit `LintOutput` to webhook, JSONL, or OpenTelemetry sinks after each run — useful for dashboards and trend analysis. Add an `output` section to your rule pack:
+
+```yaml
+output:
+  sinks:
+    - type: webhook
+      url: https://my-collector.example.com/agent-ready
+      headers: { Authorization: "Bearer ${WEBHOOK_TOKEN}" }
+    - type: jsonl
+      path: ./.agent-ready/runs.jsonl
+    - type: otel
+      endpoint: http://localhost:4318/v1/traces
+```
+
+All sinks are fail-soft: errors go to stderr and never affect the exit code. Pass `--no-telemetry` to skip sinks for a single run. See [docs/telemetry.md](docs/telemetry.md) for the full sink reference, env var interpolation, and Grafana / Langfuse integration examples.
+
 ## Status
 
 **Current release: 0.0.4.** Schemas, CLI, file and GitHub adapters, 12 built-in rules, regex custom rules, JSON/markdown/text/SARIF renderers, GitHub Action with label setter (Docker-based), and a CI workflow that runs build + tests on every PR. All verified end-to-end.

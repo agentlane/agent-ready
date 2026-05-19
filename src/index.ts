@@ -24,6 +24,9 @@ export { loadTicketFromLinear } from "./adapters/linear.js";
 export { renderMarkdown, renderText } from "./render/markdown.js";
 export { renderSarif } from "./render/sarif.js";
 
+// Telemetry
+export { emitLintOutput } from "./telemetry/emit.js";
+
 // Public types (type-only re-exports for tree-shaking)
 export type {
   Ticket,
@@ -32,6 +35,11 @@ export type {
   BuiltinRuleConfig,
   RegexRuleConfig,
   SignalsConfig,
+  OutputConfig,
+  SinkConfig,
+  WebhookSinkConfig,
+  JsonlSinkConfig,
+  OtelSinkConfig,
   LintOutput,
   LintSignals,
   LintSource,

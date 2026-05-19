@@ -14,6 +14,7 @@ import { loadTicketFromJira } from "./adapters/jira.js";
 import { loadTicketFromLinear } from "./adapters/linear.js";
 import { renderMarkdown, renderText } from "./render/markdown.js";
 import { renderSarif } from "./render/sarif.js";
+import { emitLintOutput } from "./telemetry/emit.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,16 +25,18 @@ interface Args {
   adapter: "file" | "github" | "jira" | "linear";
   rules?: string;
   format: "text" | "markdown" | "json" | "sarif" | "all";
+  noTelemetry: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { command: "help", adapter: "file", format: "text" };
+  const args: Args = { command: "help", adapter: "file", format: "text", noTelemetry: false };
   const rest: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--adapter") args.adapter = argv[++i] as Args["adapter"];
     else if (a === "--rules") args.rules = argv[++i];
     else if (a === "--format") args.format = argv[++i] as Args["format"];
+    else if (a === "--no-telemetry") args.noTelemetry = true;
     else if (a === "-h" || a === "--help") args.command = "help";
     else if (a === "-v" || a === "--version") args.command = "version";
     else rest.push(a);
@@ -126,6 +129,14 @@ async function main(): Promise<number> {
     // Single-pass envelope: json + markdown in one call (avoids double link-check etc.)
     console.log(JSON.stringify({ json: out, markdown: renderMarkdown(out) }, null, 2));
   } else console.log(renderText(out));
+
+  // Telemetry: emit to configured sinks (fail-soft; never affects exit code)
+  if (!args.noTelemetry) {
+    const sinks = pack.output?.sinks ?? [];
+    if (sinks.length) {
+      await emitLintOutput(out, sinks);
+    }
+  }
 
   return out.ready ? 0 : 1;
 }

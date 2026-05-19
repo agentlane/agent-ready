@@ -77,11 +77,46 @@ export interface SignalsConfig {
   };
 }
 
+// ── Telemetry sink config ──────────────────────────────────────────────────────
+
+export interface WebhookSinkConfig {
+  type: "webhook";
+  /** URL to POST the LintOutput JSON to. Supports ${ENV_VAR} interpolation. */
+  url: string;
+  /** Optional extra request headers. Values support ${ENV_VAR} interpolation. */
+  headers?: Record<string, string>;
+}
+
+export interface JsonlSinkConfig {
+  type: "jsonl";
+  /** File path to append JSONL records to. Supports ${ENV_VAR} interpolation. */
+  path: string;
+}
+
+export interface OtelSinkConfig {
+  type: "otel";
+  /**
+   * OTLP/HTTP endpoint (traces). Example: http://localhost:4318/v1/traces
+   * Supports ${ENV_VAR} interpolation.
+   */
+  endpoint: string;
+  /** Service name attribute. Defaults to "agent-ready". */
+  service_name?: string;
+}
+
+export type SinkConfig = WebhookSinkConfig | JsonlSinkConfig | OtelSinkConfig;
+
+
+export interface OutputConfig {
+  sinks?: SinkConfig[];
+}
+
 export interface RulePack {
   version: 1;
   extends?: string;
   rules: Record<string, RuleConfig>;
   signals?: SignalsConfig;
+  output?: OutputConfig;
 }
 
 export interface CheckResult {
