@@ -55,17 +55,16 @@ jobs:
       - run: npm pack --dry-run
         if: steps.published.outputs.exists == 'false'
 
-      - name: Upgrade npm and configure registry for OIDC publishing
+      - name: Configure registry for OIDC publishing
         if: steps.published.outputs.exists == 'false'
-        run: |
-          # npm 10.9.7 (bundled with Node 22) throws ENEEDAUTH before the OIDC
-          # exchange can run. npm 11 fixed this. Upgrade then write a clean
-          # .npmrc (registry only, no _authToken) so the OIDC exchange fires.
-          npm install -g npm@latest
-          echo "registry=https://registry.npmjs.org/" > /tmp/npm-oidc.npmrc
-          npm --version
+        run: echo "registry=https://registry.npmjs.org/" > /tmp/npm-oidc.npmrc
 
-      - run: npm publish --access public --provenance
+      - name: Publish with npm v11 via npx (bypasses npm 10.x OIDC auth gate)
         if: steps.published.outputs.exists == 'false'
+        # npm 10.9.7 (bundled with Node 22) throws ENEEDAUTH before the OIDC
+        # exchange can fire. npm 11 fixed this. `npx --yes npm@11` downloads
+        # npm@11 via pacote (not arborist/rebuild) so the broken promise-retry
+        # dep on this runner is never hit.
+        run: npx --yes npm@11 publish --access public --provenance
         env:
           NPM_CONFIG_USERCONFIG: /tmp/npm-oidc.npmrc
