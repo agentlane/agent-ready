@@ -54,8 +54,8 @@ async function evalRemote(
   cfg: OpaRuleConfig
 ): Promise<OpaDecision> {
   const base = (cfg.server ?? "http://localhost:8181").replace(/\/$/, "");
-  // "data.pii.allow" → "/v1/data/pii/allow"
-  const path = cfg.query.replace(/^data\./, "").replace(/\./g, "/");
+  // "data.pii.allow" → "/v1/data/pii/allow"  (each segment URL-encoded)
+  const path = cfg.query.replace(/^data\./, "").split(".").map(encodeURIComponent).join("/");
   const url = `${base}/v1/data/${path}`;
 
   const controller = new AbortController();

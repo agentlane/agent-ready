@@ -57,9 +57,23 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--format")       args.format = argv[++i] as Args["format"];
     else if (a === "--no-telemetry") args.noTelemetry = true;
     else if (a === "--ticket-id")    args.feedbackTicketId = argv[++i];
-    else if (a === "--outcome")      args.feedbackOutcome = argv[++i] as Args["feedbackOutcome"];
+    else if (a === "--outcome") {
+      const v = argv[++i];
+      if (v !== "success" && v !== "partial" && v !== "failure") {
+        console.error(`agent-ready: --outcome must be one of: success, partial, failure`);
+        process.exit(2);
+      }
+      args.feedbackOutcome = v;
+    }
     else if (a === "--notes")        args.feedbackNotes = argv[++i];
-    else if (a === "--duration-min") args.feedbackDurationMin = Number(argv[++i]);
+    else if (a === "--duration-min") {
+      const n = Number(argv[++i]);
+      if (!Number.isFinite(n)) {
+        console.error(`agent-ready: --duration-min must be a finite number`);
+        process.exit(2);
+      }
+      args.feedbackDurationMin = n;
+    }
     else if (a === "--run-id")       args.feedbackRunId = argv[++i];
     else if (a === "--ledger")       args.feedbackLedger = argv[++i];
     else if (a === "--runs")         args.feedbackRuns = argv[++i];

@@ -29,7 +29,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
   "mcpServers": {
     "agent-ready": {
       "command": "npx",
-      "args": ["@agentlane/agent-ready", "agent-ready-mcp"],
+      "args": ["-y", "--package=@agentlane/agent-ready", "agent-ready-mcp"],
       "env": {
         "GITHUB_TOKEN": "ghp_...",
         "JIRA_BASE_URL": "https://acme.atlassian.net",
@@ -53,7 +53,7 @@ Add to `.cursor/mcp.json` in your project root (or `~/.cursor/mcp.json` for glob
   "mcpServers": {
     "agent-ready": {
       "command": "npx",
-      "args": ["@agentlane/agent-ready", "agent-ready-mcp"],
+      "args": ["-y", "--package=@agentlane/agent-ready", "agent-ready-mcp"],
       "env": {
         "GITHUB_TOKEN": "ghp_..."
       }
@@ -122,7 +122,7 @@ Set the `cwd` in your MCP config if you want the server to pick up a project-spe
   "mcpServers": {
     "agent-ready": {
       "command": "npx",
-      "args": ["@agentlane/agent-ready", "agent-ready-mcp"],
+      "args": ["-y", "--package=@agentlane/agent-ready", "agent-ready-mcp"],
       "cwd": "/path/to/your/project"
     }
   }
@@ -161,7 +161,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 const transport = new StdioClientTransport({
   command: "npx",
-  args: ["@agentlane/agent-ready", "agent-ready-mcp"],
+  args: ["-y", "--package=@agentlane/agent-ready", "agent-ready-mcp"],
   env: { GITHUB_TOKEN: process.env.GITHUB_TOKEN },
 });
 

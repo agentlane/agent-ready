@@ -36,20 +36,24 @@ function pad(s: string, width: number): string {
 
 export async function generateReport(opts: ReportOptions): Promise<string> {
   // ── Read feedback ledger ──────────────────────────────────────────────────
-  let events: FeedbackEvent[];
+  let raw: string;
   try {
-    const raw = await readFile(opts.ledger, "utf8");
-    events = raw
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((l) => JSON.parse(l) as FeedbackEvent);
+    raw = await readFile(opts.ledger, "utf8");
   } catch {
     return (
       `No feedback ledger found at ${opts.ledger}\n\n` +
       `Record your first event:\n` +
       `  agent-ready feedback record --ticket-id PROJ-123 --outcome success`
     );
+  }
+
+  const events: FeedbackEvent[] = [];
+  for (const line of raw.trim().split("\n").filter(Boolean)) {
+    try {
+      events.push(JSON.parse(line) as FeedbackEvent);
+    } catch {
+      process.stderr.write(`agent-ready feedback: skipping malformed line in ${opts.ledger}\n`);
+    }
   }
 
   if (events.length === 0) {
@@ -69,8 +73,12 @@ export async function generateReport(opts: ReportOptions): Promise<string> {
       const runsRaw = await readFile(opts.runs, "utf8");
       const runMap = new Map<string, LintOutput>();
       for (const line of runsRaw.trim().split("\n").filter(Boolean)) {
-        const out = JSON.parse(line) as LintOutput;
-        if (out.run_id) runMap.set(out.run_id, out);
+        try {
+          const out = JSON.parse(line) as LintOutput;
+          if (out.run_id) runMap.set(out.run_id, out);
+        } catch {
+          process.stderr.write(`agent-ready feedback: skipping malformed line in ${opts.runs}\n`);
+        }
       }
 
       ruleStats = new Map<string, RuleStats>();

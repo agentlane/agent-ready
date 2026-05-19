@@ -100,8 +100,11 @@ export async function lintTicket(
   const phase1: Promise<CheckResult>[] = [];
 
   for (const rule of BUILTIN_RULES) {
-    // Built-in rule configs never have type: "regex" — cast is safe
-    const cfg = (ruleConfigs[rule.id] ?? { enabled: rule.defaultEnabled ?? true }) as BuiltinRuleConfig;
+    const raw = ruleConfigs[rule.id] ?? { enabled: rule.defaultEnabled ?? true };
+    // Skip if user has accidentally given a built-in rule ID a non-builtin type
+    const rawType = (raw as { type?: string }).type;
+    if (rawType === "regex" || rawType === "opa") continue;
+    const cfg = raw as BuiltinRuleConfig;
     if (cfg.enabled === false) continue;
     phase1.push(Promise.resolve().then(() => rule.run(ticket, cfg)));
   }

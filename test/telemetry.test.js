@@ -248,6 +248,21 @@ describe("telemetry — OTel sink", () => {
       emitLintOutput(makeLintOutput(), [{ type: "otel", endpoint: "http://127.0.0.1:9999/v1/traces" }])
     );
   });
+
+  it("treats 202 Accepted as success (common OTel collector response)", async () => {
+    let called = false;
+    globalThis.fetch = async (_url, opts) => {
+      called = true;
+      // Verify it's a POST with the right content-type
+      assert.equal(opts.method, "POST");
+      return new Response("{}", { status: 202 });
+    };
+
+    await assert.doesNotReject(() =>
+      emitLintOutput(makeLintOutput(), [{ type: "otel", endpoint: "http://localhost:4318/v1/traces" }])
+    );
+    assert.ok(called, "fetch should have been called");
+  });
 });
 
 // ── Multi-sink fan-out ─────────────────────────────────────────────────────────

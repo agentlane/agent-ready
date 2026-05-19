@@ -89,6 +89,17 @@ describe("recordFeedback", () => {
     const parsed = JSON.parse((await readFile(ledger, "utf8")).trim());
     assert.equal(parsed.outcome, "failure");
   });
+
+  it("handles concurrent writes correctly (Promise.all)", async () => {
+    const ledger = join(tmpDir, "concurrent.jsonl");
+    const ids = ["C-1", "C-2", "C-3", "C-4", "C-5"];
+    await Promise.all(ids.map((id) => recordFeedback({ ticketId: id, outcome: "success", ledger })));
+
+    const lines = (await readFile(ledger, "utf8")).trim().split("\n").filter(Boolean);
+    assert.equal(lines.length, 5, "all 5 concurrent records should be written");
+    const written = new Set(lines.map((l) => JSON.parse(l).ticket_id));
+    for (const id of ids) assert.ok(written.has(id), `ledger should contain ${id}`);
+  });
 });
 
 // ── generateReport ────────────────────────────────────────────────────────────
